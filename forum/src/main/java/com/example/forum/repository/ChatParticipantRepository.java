@@ -30,7 +30,7 @@ public interface ChatParticipantRepository extends JpaRepository<ChatParticipant
                         WHERE cp2.chat.id = c.id and u2.userId <> :userId)
                   END,
                   CASE
-                      WHEN c.isGroup = false THEN c.chatAvatarUrl
+                      WHEN c.isGroup = true THEN c.chatAvatarUrl
                       ELSE (
                             SELECT u2.avatarUrl FROM ChatParticipant cp2 JOIN cp2.userEntity u2
                             WHERE cp2.chat.id = c.id AND u2.userId <> :userId)

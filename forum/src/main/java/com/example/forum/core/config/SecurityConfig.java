@@ -57,7 +57,9 @@ public class SecurityConfig {
                                 , "/forum/home/**"
                                 ,"/login/oauth2/**",
                                 "/oauth2/**",
-                                "/forum/upload/avatar")
+                                "/forum/upload/avatar",
+                                "/ws/**"
+                        )
                         .permitAll()
                         .requestMatchers("/forum/admin/**").hasRole("ADMIN")
                         .requestMatchers("/forum/user/**", "/forum/auth/me").hasAnyRole("USER", "ADMIN")
@@ -79,15 +81,15 @@ public class SecurityConfig {
                         })
                 )
 
-                .oauth2Login(oauth -> oauth
-                        .authorizationEndpoint(auth -> auth
-                                .baseUri("/oauth2/authorization")  // ✅ Đảm bảo match với frontend
-                        )
-                        .userInfoEndpoint(user ->
-                                user.oidcUserService(customOidc2UserService)
-                        )
-                        .successHandler(customOAuthSuccessHandler)
-                )
+//                .oauth2Login(oauth -> oauth
+//                        .authorizationEndpoint(auth -> auth
+//                                .baseUri("/oauth2/authorization")  // ✅ Đảm bảo match với frontend
+//                        )
+//                        .userInfoEndpoint(user ->
+//                                user.oidcUserService(customOidc2UserService)
+//                        )
+//                        .successHandler(customOAuthSuccessHandler)
+//                )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
@@ -102,7 +104,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         // 1. Cho phép Frontend của bạn (đổi port nếu cần)
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://127.0.0.1:5501"));
 
         // 2. Cho phép các method phổ biến
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
