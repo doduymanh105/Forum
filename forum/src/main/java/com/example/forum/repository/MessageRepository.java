@@ -25,4 +25,6 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     );
 
     Optional<Message> findTopByChatIdOrderBySendAtDesc(Long chatId);
+
+    boolean existsByIdAndChatId(Long replyId, Long chatId);
 }

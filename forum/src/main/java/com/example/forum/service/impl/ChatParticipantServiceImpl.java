@@ -153,6 +153,7 @@ public class ChatParticipantServiceImpl implements ChatParticipantService {
 
 
     @Override
+    @Transactional
     public ReadReceiptResponse readNewestChatMessage(Long chatId) {
         Long currentUserId = securityUtils.getCurrentUserId();
         ChatParticipant currentUserParticipant = chatParticipantRepo.findMyParticipantByChatIAndUserId(chatId, currentUserId)
@@ -176,6 +177,7 @@ public class ChatParticipantServiceImpl implements ChatParticipantService {
     }
 
     @Override
+    @Transactional
     public MyChatSettingResponse updateChatSetting(Long chatId, UpdateChatSettingRequest request) {
         ChatParticipant currentUserParticipant = chatParticipantRepo.findMyParticipantByChatIAndUserId(chatId, securityUtils.getCurrentUserId())
                 .orElseThrow(()-> new AppException(ErrorCode.CHAT_PARTICIPANT_NOT_FOUND));

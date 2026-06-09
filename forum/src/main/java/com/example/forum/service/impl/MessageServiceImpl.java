@@ -40,25 +40,32 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     @Transactional
-    public MessageResponse sendMessage(Long chatId, String content) {
+    public MessageResponse sendMessage(Long chatId, String content, Long replyId) {
         UserEntity currentUser = securityUtils.getCurrentUser();
         ChatParticipant currentChatParticipant = chatParticipantRepo.findMyParticipantByChatIAndUserId(chatId, currentUser.getUserId())
                 .orElseThrow(()-> new AppException(ErrorCode.CHAT_PARTICIPANT_NOT_FOUND));
 
+        if (replyId != null) {
+            boolean isValidReply = messageRepository.existsByIdAndChatId(replyId, chatId);
+            if (!isValidReply) {
+                throw new AppException(ErrorCode.MESSAGE_NOT_FOUND);
+            }
+        }
+        LocalDateTime currentTime = LocalDateTime.now();
         Chat chat = currentChatParticipant.getChat();
 
-
-                Message message= Message.builder()
+        Message message= Message.builder()
                 .chat(currentChatParticipant.getChat())
                 .sender(currentUser)
                 .content(content)
                 .type(MessageType.TEXT)
-                .replyToMessageId(null)
+                .replyToMessageId(replyId)
+                .sendAt(currentTime)
                 .build();
 
         messageRepository.save(message);
 
-        chat.setLastMessageAt(LocalDateTime.now());
+        chat.setLastMessageAt(currentTime);
         chat.setLastMessageContent(content);
         chat.setLastMessageId(message.getId());
         chat.setLastMessageType(MessageType.TEXT);
@@ -90,7 +97,7 @@ public class MessageServiceImpl implements MessageService {
             SideBarNotificationResponse sidebarPayload = SideBarNotificationResponse.builder()
                     .chatId(chatId)
                     .lastMessage(content)
-                    .lastMessageTime(message.getSendAt())
+                    .lastMessageTime(currentTime)
                     .lastMessageType(message.getType())
                     .senderName(currentUser.displayUsername())
                     .unreadCount(chatParticipant.getUnreadCount())
@@ -135,6 +142,7 @@ public class MessageServiceImpl implements MessageService {
 
 
     @Override
+    @Transactional
     public void deleteMessage(Long id) {
         Message message = messageRepository.findById(id)
                 .orElseThrow(()-> new AppException(ErrorCode.MESSAGE_NOT_FOUND));
@@ -144,6 +152,10 @@ public class MessageServiceImpl implements MessageService {
             throw new AppException(ErrorCode.NOT_OWNED_MESSAGE);
         }
         message.setDeleted(true);
+        message.setContent("This message has been recalled");
         messageRepository.save(message);
+
+        MessageResponse response = mapToMessageResponse(message);
+        notificationService.sendNewMessageNotification(message.getChat().getId(), response);
     }
 }

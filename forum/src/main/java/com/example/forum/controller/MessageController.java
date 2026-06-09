@@ -23,7 +23,7 @@ public class MessageController {
             @PathVariable Long chatId,
             @Valid @RequestBody MessageRequest request) {
 
-        MessageResponse response = messageService.sendMessage(chatId, request.getContent());
+        MessageResponse response = messageService.sendMessage(chatId, request.getContent(), request.getReplyId());
 
         return ResponseEntity.ok(response);
     }

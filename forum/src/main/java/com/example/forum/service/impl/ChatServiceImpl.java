@@ -98,6 +98,7 @@ public class ChatServiceImpl implements ChatService {
                 .createdAt(chat.getCreatedAt())
                 .isPinned(cp.isPinned())
                 .isMuted(cp.isMuted())
+                .isArchived(cp.isArchived())
                 .build();
     }
 

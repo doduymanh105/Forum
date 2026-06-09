@@ -18,6 +18,7 @@ public class MessageResponse {
     private MessageType type;
     private Long replyToMessageId;
     private boolean isEdited;
+    private boolean isDeleted;
     private LocalDateTime sendAt;
     private LocalDateTime updatedAt;
 
@@ -25,10 +26,11 @@ public class MessageResponse {
         return MessageResponse.builder()
                 .id(message.getId())
                 .sender(UserResponse.mapToUserResponse(message.getSender()))
-                .content(message.getContent())
+                .content(message.isDeleted() ? "This message has been recalled" : message.getContent())
                 .type(message.getType())
                 .replyToMessageId(message.getReplyToMessageId())
                 .isEdited(message.isEdited())
+                .isDeleted(message.isDeleted())
                 .sendAt(message.getSendAt())
                 .updatedAt(message.getUpdatedAt())
                 .build();
