@@ -1,5 +1,6 @@
 package com.example.forum.service;
 
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public interface CacheService {
@@ -16,4 +17,12 @@ public interface CacheService {
     long increment(String key);
 
     void setExpire (String key, long timeout, TimeUnit unit);
+
+    long addToSet(String key,String value);
+
+    long removeFromSet(String key,String value);
+
+    long getSetSize(String key);
+
+    Set<Object> getSetMembers(String key);
 }

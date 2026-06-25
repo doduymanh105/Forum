@@ -20,10 +20,15 @@ public final class AppConstants {
     public static final String PREFIX_VERIFICATION_ATTEMPT ="attempts:verification:otp:";
     public static final String PREFIX_RESET_TOKEN="password_reset_token:";
 
-    // redis value
+    // redis account value
     public static final String REDIS_VALUE_REVOKED ="revoked";
     public static final String REDIS_VALUE_LOGOUT ="logout";
     public static final String REDIS_VALUE_LOCKED="locked";
+
+
+    // redis online
+    public static final String ONLINE_KEY_PREFIX = "USER_ONLINE:";
+
 
     // user role
     public static final String ROLE_USER ="ROLE_USER";
