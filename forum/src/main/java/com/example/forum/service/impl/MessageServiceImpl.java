@@ -110,6 +110,7 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
+    @Transactional
     public MessageResponse editMessage(EditMessageRequest request, Long id) {
         Message message = messageRepository.findById(id)
                 .orElseThrow(()-> new AppException(ErrorCode.MESSAGE_NOT_FOUND));
@@ -121,7 +122,11 @@ public class MessageServiceImpl implements MessageService {
         message.setContent(request.getContent());
         message.setEdited(true);
         messageRepository.save(message);
-
+        // TODO: notify sidebar for case other users are in sidebar (async or batch update)
+        Chat chat = message.getChat();
+        if(message.getId().equals(chat.getLastMessageId())){
+            chat.setLastMessageContent(request.getContent());
+        }
         MessageResponse response = mapToMessageResponse(message);
         notificationService.sendNewMessageNotification(message.getChat().getId(), response);
         return response;
@@ -151,10 +156,14 @@ public class MessageServiceImpl implements MessageService {
         if(!currentUserId.equals(message.getSender().getUserId())){
             throw new AppException(ErrorCode.NOT_OWNED_MESSAGE);
         }
+        String content= "This message has been recalled";
         message.setDeleted(true);
-        message.setContent("This message has been recalled");
+        message.setContent(content);
         messageRepository.save(message);
-
+        Chat chat = message.getChat();
+        if(message.getId().equals(chat.getLastMessageId())){
+            chat.setLastMessageContent(content);
+        }
         MessageResponse response = mapToMessageResponse(message);
         notificationService.sendNewMessageNotification(message.getChat().getId(), response);
     }

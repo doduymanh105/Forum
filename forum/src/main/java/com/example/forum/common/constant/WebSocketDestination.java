@@ -12,6 +12,7 @@ public class WebSocketDestination {
     public static String readReceipt(Long chatId) {
         return TOPIC_CHAT_PREFIX + chatId + "/read-receipt";
     }
+    public static String typingDestination(Long chatId){ return TOPIC_CHAT_PREFIX + chatId + "/typing"; }
 
     public static String privateNotifications() {
         return USER_QUEUE_PREFIX + "notifications";

@@ -34,6 +34,13 @@ public class ChatNotificationServiceImpl implements ChatNotificationService {
     public void sendNewChatNotification(Long userId, Object chatPayload) {
         String destination = WebSocketDestination.newChatNotification();
         messagingTemplate.convertAndSend(destination, chatPayload);
-
     }
+
+    @Override
+    public void sendTypingNotification(Long chatId, Object chatPayload) {
+        String destination = WebSocketDestination.typingDestination(chatId);
+        messagingTemplate.convertAndSend(destination, chatPayload);
+    }
+
+
 }

@@ -1,14 +1,18 @@
 package com.example.forum.controller;
 
+import com.example.forum.common.constant.WebSocketDestination;
 import com.example.forum.dto.request.chatRequestDto.CreateDirectChatRequest;
 import com.example.forum.dto.request.chatRequestDto.CreateGroupChatRequest;
+import com.example.forum.dto.request.chatRequestDto.TypingEvent;
 import com.example.forum.dto.request.chatRequestDto.UpdateChatRequest;
 import com.example.forum.dto.response.chatResponseDto.ApiResponse;
 import com.example.forum.dto.response.chatResponseDto.ChatMessageResponse;
 import com.example.forum.dto.response.chatResponseDto.ChatResponse;
+import com.example.forum.service.ChatNotificationService;
 import com.example.forum.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class ChatController {
 
     private final ChatService chatService;
+    private final ChatNotificationService chatNotification;
 
     @GetMapping()
     public ResponseEntity<ApiResponse<?>> getChats(
@@ -102,6 +107,11 @@ public class ChatController {
                 ApiResponse.success("Get messages successfully",
                         chatService.getChatMessage(id,page, size,keyword ))
         );
+    }
+
+    @MessageMapping("/chat.typing")
+    public void handleTyping(TypingEvent event) {
+        chatNotification.sendTypingNotification(event.getChatId(), event);
     }
 
 
