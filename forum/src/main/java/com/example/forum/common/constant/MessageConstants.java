@@ -114,5 +114,13 @@ public class MessageConstants {
     public static String leaveChatMessage(UserEntity actor){
         return actor.displayUsername() + "has left the chat";
     }
+
+    public static String changeGroupChatAvatar(UserEntity actor){
+        return actor.displayUsername()+ "has changed group avatar";
+    }
+
+    public static String changeGroupName(UserEntity actor, String newName){
+        return actor.displayUsername()+ "has changed group's name to " + newName;
+    }
 }
 

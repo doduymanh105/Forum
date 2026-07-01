@@ -5,6 +5,7 @@ import com.example.forum.dto.request.chatRequestDto.UpdateChatRequest;
 import com.example.forum.dto.response.chatResponseDto.ChatMessageResponse;
 import com.example.forum.dto.response.chatResponseDto.ChatResponse;
 import com.example.forum.dto.response.chatResponseDto.CustomPageable;
+import com.example.forum.dto.response.chatResponseDto.MessageResponse;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface ChatService {
@@ -16,5 +17,4 @@ public interface ChatService {
     ChatResponse updateChatAvatar(Long chatId, MultipartFile file);
     void deleteChat(Long id);
     ChatMessageResponse getChatMessage(Long chatId, int page, int size, String keyword);
-    ChatMessageResponse sendMediaMessage(Long chatId, MultipartFile file);
 }

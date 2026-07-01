@@ -38,7 +38,7 @@ public class ChatEventServiceImpl implements ChatEventService {
         this.processGroupSystemEvent(chat, actor, systemContent, null, eventType);
     }
 
-    //KICK, CHANGE_ROLE, ADD, LEAVE
+    //KICK, CHANGE_ROLE, ADD, LEAVE, CHANGE CHAT INFO/AVATAR
     @Async
     @Override
     @Transactional

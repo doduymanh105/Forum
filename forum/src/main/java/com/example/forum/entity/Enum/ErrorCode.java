@@ -25,7 +25,8 @@ public enum ErrorCode {
     MESSAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "Message not found!"),
     NOT_OWNED_MESSAGE(HttpStatus.FORBIDDEN, "You are not creator of this message!"),
     CHAT_MUST_HAVE_ADMIN(HttpStatus.CONFLICT, "Chat must have at least one admin"),
-    LAST_ADMIN_CANNOT_LEAVE(HttpStatus.CONFLICT, "Cannot leave because you are the last admin")
+    LAST_ADMIN_CANNOT_LEAVE(HttpStatus.CONFLICT, "Cannot leave because you are the last admin"),
+    GROUP_CHAT_FEATURE(HttpStatus.UNAUTHORIZED, "This feature is belong to group chat")
     ;
 
     private final HttpStatus status;

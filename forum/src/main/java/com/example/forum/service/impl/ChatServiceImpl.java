@@ -1,20 +1,26 @@
 package com.example.forum.service.impl;
 
 
+import com.example.forum.common.constant.MessageConstants;
 import com.example.forum.common.utils.SecurityUtils;
 import com.example.forum.core.exception.AppException;
 import com.example.forum.dto.request.chatRequestDto.CreateGroupChatRequest;
 import com.example.forum.dto.request.chatRequestDto.UpdateChatRequest;
+import com.example.forum.dto.response.UploadResponseDto;
 import com.example.forum.dto.response.chatResponseDto.*;
 import com.example.forum.entity.*;
+import com.example.forum.entity.Enum.ChatEvent;
 import com.example.forum.entity.Enum.ChatRole;
 import com.example.forum.entity.Enum.ErrorCode;
+import com.example.forum.entity.Enum.MessageType;
 import com.example.forum.repository.ChatParticipantRepository;
 import com.example.forum.repository.ChatRepository;
 import com.example.forum.repository.MessageRepository;
 import com.example.forum.repository.UserRepository;
+import com.example.forum.service.ChatEventService;
 import com.example.forum.service.ChatNotificationService;
 import com.example.forum.service.ChatService;
+import com.example.forum.service.CloudinaryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -24,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -38,7 +45,9 @@ public class ChatServiceImpl implements ChatService {
     private final MessageRepository messageRepo;
 
     private final ChatNotificationService notificationService;
+    private final CloudinaryService cloudinaryService;
     private final SecurityUtils securityUtils;
+    private final ChatEventService chatEventService;
 
     @Override
     public CustomPageable<ChatResponse> getChatLists(int page, int size, String sortDir, String sortBy, String keyword) {
@@ -81,8 +90,8 @@ public class ChatServiceImpl implements ChatService {
         return mapToChatResponse(chatParticipant);
     }
 
-    public ChatParticipant findChatParticipant(Long userId1, Long userId2){
-        Optional<ChatParticipant> chatParticipant = chatParticipantRepo.findByUserIdAndChatId(userId1, userId2);
+    public ChatParticipant findChatParticipant(Long userId1, Long chatId){
+        Optional<ChatParticipant> chatParticipant = chatParticipantRepo.findByUserIdAndChatId(userId1, chatId);
         if (chatParticipant.isEmpty()){
             throw new AppException(ErrorCode.CHAT_PARTICIPANT_NOT_FOUND);
         }
@@ -129,6 +138,7 @@ public class ChatServiceImpl implements ChatService {
 
         List<ChatParticipant> chatParticipantList = createChatParticipants(userList,savedChat, currentUserId);
         List<ChatParticipant> savedParticipants= chatParticipantRepo.saveAll(chatParticipantList);
+        //TODO: send invitation and wait for acceptance
 
         notifyAllChatParticipant(savedParticipants);
 
@@ -159,6 +169,7 @@ public class ChatServiceImpl implements ChatService {
 
 
     @Override
+    @Transactional
     public ChatResponse createGroupChat(CreateGroupChatRequest request) {
         // check friend
         UserEntity currentUser = securityUtils.getCurrentUser();
@@ -190,27 +201,28 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
+    @Transactional
     public ChatResponse updateChatInfo(UpdateChatRequest request, Long chatId) {
         Chat chat = chatRepo.findByIdAndIsDeletedFalse(chatId)
                 .orElseThrow(()-> new AppException(ErrorCode.CHAT_NOT_FOUND));
-        Long currentUserId = securityUtils.getCurrentUserId();
-        ChatParticipant chatParticipant = chatParticipantRepo.findMyParticipantByChatIAndUserId(chatId, currentUserId)
+        UserEntity currentUser = securityUtils.getCurrentUser();
+        ChatParticipant chatParticipant = chatParticipantRepo.findMyParticipantByChatIAndUserId(chatId, currentUser.getUserId())
                 .orElseThrow(()-> new AppException(ErrorCode.CHAT_PARTICIPANT_NOT_FOUND));
         if(!ChatRole.ADMIN.equals(chatParticipant.getRole())){
             throw new AppException(ErrorCode.CHAT_ACTION_FORBIDDEN);
         }
 
         chat.setChatName(request.getChatName());
-        chatRepo.save(chat);
+        chat = chatRepo.save(chat);
 
-        List<ChatParticipant> chatParticipants = chatParticipantRepo.findAllByChatId(chatId);
-        notifyAllChatParticipant(chatParticipants);
+        String message = MessageConstants.changeGroupName(currentUser, chat.getChatName());
+        chatEventService.processGroupSystemEvent(chat, currentUser,message, ChatEvent.CHANGE_NAME );
         return mapToChatResponse(chatParticipant);
     }
 
-    public void notifyAllChatParticipant(List<ChatParticipant> participants){
+    public void notifyAllChatParticipant(List<ChatParticipant> chatParticipants){
         UserEntity currentUser = securityUtils.getCurrentUser();
-        for (ChatParticipant participant : participants) {
+        for (ChatParticipant participant : chatParticipants) {
             if (participant.getUserEntity().getUserId().equals(currentUser.getUserId())) {
                 continue;
             }
@@ -221,11 +233,25 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     public ChatResponse updateChatAvatar(Long chatId, MultipartFile file) {
-        // when have upload module
-        return null;
+        UserEntity user = securityUtils.getCurrentUser();
+        ChatParticipant chatParticipant = chatParticipantRepo.findMyParticipantByChatIAndUserId(chatId, user.getUserId())
+                .orElseThrow(()-> new AppException(ErrorCode.CHAT_PARTICIPANT_NOT_FOUND));
+
+        Chat chat = chatParticipant.getChat();
+        if(!chat.isGroup()){
+            throw new AppException(ErrorCode.GROUP_CHAT_FEATURE);
+        }
+        UploadResponseDto uploadImage = cloudinaryService.uploadImage(file);
+        chat.setChatAvatarUrl(uploadImage.getUrl());
+        chatRepo.save(chat);
+        //TODO: notification to group chat
+        String message = MessageConstants.changeGroupChatAvatar(user);
+        chatEventService.processGroupSystemEvent(chat, user,message, ChatEvent.CHANGE_AVATAR );
+        return mapToChatResponse(chatParticipant);
     }
 
     @Override
+    @Transactional
     public void deleteChat(Long chatId) {
         Chat chat = chatRepo.findByIdAndIsDeletedFalse(chatId)
                 .orElseThrow(()-> new AppException(ErrorCode.CHAT_NOT_FOUND));
@@ -279,11 +305,6 @@ public class ChatServiceImpl implements ChatService {
                 .build();
     }
 
-    @Override
-    public ChatMessageResponse sendMediaMessage(Long chatId, MultipartFile file) {
-        // when have upload module
-        return null;
-    }
 
     public ChatOverview mapToChatOverview(Chat chat){
         return ChatOverview.builder()
