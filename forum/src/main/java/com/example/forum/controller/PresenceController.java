@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/presence")
+@RequestMapping("/forum/presence")
 @RequiredArgsConstructor
 public class PresenceController {
 
@@ -28,4 +28,5 @@ public class PresenceController {
                 )
         );
     }
+
 }

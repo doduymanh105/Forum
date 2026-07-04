@@ -11,9 +11,11 @@ import com.example.forum.dto.response.chatResponseDto.ChatResponse;
 import com.example.forum.service.ChatNotificationService;
 import com.example.forum.service.ChatService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/chats")
@@ -83,6 +85,20 @@ public class ChatController {
                 )
         );
     }
+
+    @PostMapping(value = "/{id}/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<?>> updateGroupAvatar(
+            @PathVariable Long id,
+            @RequestPart("file")MultipartFile file
+            ){
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "Chat avatar updated",
+                        chatService.updateChatAvatar(id, file)
+                )
+        );
+    }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<?>> deleteChat(

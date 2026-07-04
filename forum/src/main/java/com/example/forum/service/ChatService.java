@@ -5,7 +5,6 @@ import com.example.forum.dto.request.chatRequestDto.UpdateChatRequest;
 import com.example.forum.dto.response.chatResponseDto.ChatMessageResponse;
 import com.example.forum.dto.response.chatResponseDto.ChatResponse;
 import com.example.forum.dto.response.chatResponseDto.CustomPageable;
-import com.example.forum.dto.response.chatResponseDto.MessageResponse;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface ChatService {
