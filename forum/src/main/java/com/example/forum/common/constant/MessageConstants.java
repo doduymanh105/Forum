@@ -1,6 +1,11 @@
 package com.example.forum.common.constant;
 
+import com.example.forum.entity.Chat;
+import com.example.forum.entity.Enum.ChatRole;
+import com.example.forum.entity.UserEntity;
 import org.springframework.beans.factory.annotation.Value;
+
+import java.util.List;
 
 public class MessageConstants {
     private MessageConstants() {}
@@ -91,5 +96,31 @@ public class MessageConstants {
     public static final String MEDIA_NOT_BELONG_TO_POST = "Media does not belong to the selected post.";
     public static final String NO_PERMISSION_TO_DELETE_MEDIA = "You do not have permission to delete this image.";
     public static final String UPLOAD_LIMIT_EXCEEDED = "Upload failed. File size exceeds 5MB or total request exceeds 25MB.";
+
+
+    public static String kickMessage(UserEntity actor, UserEntity targetUser){
+        return actor.displayUsername() + " removed " + targetUser.displayUsername() + " from group.";
+    }
+
+    public static String roleUpdateMessage(UserEntity actor, UserEntity targetUser, ChatRole role){
+        return actor.displayUsername() +" set "+ targetUser.displayUsername()+ " as " + role;
+    }
+
+    public static String addMemberMessage(UserEntity actor, List<UserEntity> userList){
+        String joinedNames = userList.stream().map(UserEntity::displayUsername).reduce((a, b) -> a + ", " + b).orElse("");
+        return actor.displayUsername() + " Added " + joinedNames + " to group.";
+    }
+
+    public static String leaveChatMessage(UserEntity actor){
+        return actor.displayUsername() + "has left the chat";
+    }
+
+    public static String changeGroupChatAvatar(UserEntity actor){
+        return actor.displayUsername()+ "has changed group avatar";
+    }
+
+    public static String changeGroupName(UserEntity actor, String newName){
+        return actor.displayUsername()+ "has changed group's name to " + newName;
+    }
 }
 

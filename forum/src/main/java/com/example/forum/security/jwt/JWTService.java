@@ -1,9 +1,7 @@
 package com.example.forum.security.jwt;
 
 import com.example.forum.entity.UserEntity;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
@@ -106,6 +104,24 @@ public class JWTService {
     private Key getSigningKey (){
         byte [] keyByte = Decoders.BASE64.decode(SECRET_KEY);
         return Keys.hmacShaKeyFor(keyByte);
+    }
+
+    public boolean validateToken(String token){
+        try{
+            Jwts.parser().setSigningKey(getSigningKey())
+                    .build()
+                    .parseClaimsJws(token);
+            return true;
+        } catch (MalformedJwtException e){
+
+        } catch (ExpiredJwtException e){
+
+        } catch (UnsupportedJwtException e){
+
+        } catch (IllegalArgumentException e){
+            // for empty claims
+        }
+        return false;
     }
 
 }
