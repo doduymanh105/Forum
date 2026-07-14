@@ -1,6 +1,6 @@
 package com.example.forum.common.utils;
 
-import com.example.forum.entity.UserEntity;
+import com.example.forum.domain.UserEntity;
 import com.example.forum.core.exception.NotLoggedInException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;

@@ -1,8 +1,7 @@
 package com.example.forum.core.exception;
 
 import com.example.forum.common.constant.MessageConstants;
-import com.example.forum.dto.response.ApiResponse;
-import com.example.forum.entity.Enum.ErrorCode;
+import com.example.forum.common.dto.ApiResponse;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

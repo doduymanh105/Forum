@@ -1,6 +1,6 @@
 package com.example.forum.core.config;
 
-import com.example.forum.security.websocket.WebsocketAuthInterceptor;
+import com.example.forum.core.security.websocket.WebsocketAuthInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
