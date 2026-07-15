@@ -9,7 +9,7 @@ import com.example.forum.domain.NotificationEvent;
 import com.example.forum.domain.UserEntity;
 import com.example.forum.core.exception.NotLoggedInException;
 import com.example.forum.core.exception.ResourceNotFoundException;
-import com.example.forum.feature.chat.EventNotificationRepository;
+import com.example.forum.feature.chat.repository.EventNotificationRepository;
 import com.example.forum.feature.follow.FollowRepository;
 import com.example.forum.feature.user.UserRepository;
 import com.example.forum.common.utils.SecurityUtils;

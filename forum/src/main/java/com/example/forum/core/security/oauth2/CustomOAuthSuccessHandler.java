@@ -4,7 +4,7 @@ import com.example.forum.common.constant.MessageConstants;
 import com.example.forum.common.utils.RequestUtils;
 import com.example.forum.core.security.jwt.JWTService;
 import com.example.forum.domain.UserEntity;
-import com.example.forum.feature.auth.DeviceService;
+import com.example.forum.feature.auth.service.DeviceService;
 import com.example.forum.feature.user.UserRepository;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

@@ -39,7 +39,6 @@ public class PostServiceImpl implements PostService {
 
     private final PostRepository postRepo;
     private final UserRepository userRepo;
-    private final CategoryRepository categoryRepo;
     private final TagRepository tagRepo;
     private final CommentRepository commentRepository;
     private final VoteRepository voteRepository;
@@ -223,12 +222,6 @@ public class PostServiceImpl implements PostService {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .avatarUrl(user.getAvatarUrl())
-                .build();
-    }
-    private CategoryDto mapToCategoryDto(Category category) {
-        return CategoryDto.builder()
-                .categoryId(category.getCategoryId())      // map từ entity sang dto
-                .categoryName(category.getCategoryName())
                 .build();
     }
 

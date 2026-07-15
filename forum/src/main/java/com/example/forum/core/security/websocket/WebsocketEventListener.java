@@ -1,6 +1,6 @@
 package com.example.forum.core.security.websocket;
 
-import com.example.forum.feature.chat.OnlineOfflineService;
+import com.example.forum.feature.chat.service.OnlineOfflineService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;

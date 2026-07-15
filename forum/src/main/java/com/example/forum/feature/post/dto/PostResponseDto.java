@@ -28,7 +28,7 @@ public class PostResponseDto {
     private String creatorName;
     private String creatorAvatarUrl;
 
-    private Set<CategoryDto> categories;
+//    private Set<CategoryDto> categories;
     private Set<TagDto> tags;
 
     private Long commentCount; // (Số bình luận)

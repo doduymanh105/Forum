@@ -1,6 +1,5 @@
 package com.example.forum.feature.media;
 
-import com.example.forum.common.service.cache.RedisService;
 import com.example.forum.common.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -15,7 +14,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UploadController {
 
-    private final RedisService.CloudinaryService cloudinaryService;
+    private final CloudinaryService cloudinaryService;
 
     @PostMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> upload(
