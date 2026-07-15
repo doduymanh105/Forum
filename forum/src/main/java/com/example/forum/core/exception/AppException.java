@@ -1,8 +1,6 @@
 package com.example.forum.core.exception;
 
 
-import com.example.forum.entity.Enum.ErrorCode;
-
 public class AppException extends RuntimeException {
 
     private final ErrorCode errorCode;

@@ -12,7 +12,7 @@ import java.util.Arrays;
 @Slf4j
 public class EmailLoggingAspect {
 
-    @Pointcut(value = "execution(* com.example.forum.service.EmailService.*(..))")
+    @Pointcut(value = "execution(* com.example.forum.common.service.email.EmailService.*(..))")
     public void emailServiceMethods(){}
 
     @Before("emailServiceMethods()")

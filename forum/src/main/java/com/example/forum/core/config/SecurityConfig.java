@@ -1,8 +1,8 @@
 package com.example.forum.core.config;
 
-import com.example.forum.security.oauth2.CustomOidc2UserService;
-import com.example.forum.security.oauth2.CustomOAuthSuccessHandler;
-import com.example.forum.security.jwt.JWTAuthenticationFilter;
+import com.example.forum.core.security.oauth2.CustomOidc2UserService;
+import com.example.forum.core.security.oauth2.CustomOAuthSuccessHandler;
+import com.example.forum.core.security.jwt.JWTAuthenticationFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -21,8 +21,6 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
-
-import static org.springframework.security.config.Customizer.withDefaults;
 
 
 @Configuration

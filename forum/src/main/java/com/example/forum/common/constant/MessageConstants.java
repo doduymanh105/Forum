@@ -1,8 +1,7 @@
 package com.example.forum.common.constant;
 
-import com.example.forum.entity.Chat;
-import com.example.forum.entity.Enum.ChatRole;
-import com.example.forum.entity.UserEntity;
+import com.example.forum.domain.Enum.ChatRole;
+import com.example.forum.domain.UserEntity;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.util.List;
