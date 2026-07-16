@@ -25,18 +25,15 @@ public class AuthenticationController {
     private final VerificationService verificationService;
     private final AdminServiceImpl adminService;
 
-    // API mới: Lấy thông tin user hiện tại dựa trên Token
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(Authentication authentication) {
-        // Spring Security sẽ tự động lấy user từ JWT Token
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ApiResponse<>(false, "Not authenticated", null));
+                    .body(new ApiResponse<>(401, "Not authenticated", null));
         }
 
         UserEntity user = (UserEntity) authentication.getPrincipal();
 
-        // Trả về UserSummaryDto (bạn đã có hàm mapper này)
         UserSummaryDto userDto = new UserSummaryDto(
                 user.getUserId(),
                 user.displayUsername(),
@@ -44,7 +41,7 @@ public class AuthenticationController {
                 user.getAvatarUrl()
         );
 
-        return ResponseEntity.ok(new ApiResponse<>(true, "User fetched", userDto));
+        return ResponseEntity.ok(ApiResponse.success("User fetched", userDto));
     }
 
     @PostMapping(value = "/register")
@@ -53,8 +50,7 @@ public class AuthenticationController {
             ){
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(new ApiResponse<>(
-                        true,
+                .body(ApiResponse.created(
                         "Successfully created, you need to verify your email",
                         authenticationService.register(request)
         ));
@@ -64,8 +60,7 @@ public class AuthenticationController {
     public ResponseEntity<?> verifyEmail (@Valid
             @RequestBody VerifyEmailRequest request
     ) {
-        return ResponseEntity.ok(new ApiResponse<>(
-               true,
+        return ResponseEntity.ok( ApiResponse.success(
                "successfully, you can login now",
                 authenticationService.verifyCode(request.getEmail(), request.getCode())
         ));
@@ -76,8 +71,7 @@ public class AuthenticationController {
             @Valid @RequestBody ResendEmailRequest request
             ){
         verificationService.resendVerificationCode(request.getEmail());
-        return ResponseEntity.ok(new ApiResponse<>(
-                true,
+        return ResponseEntity.ok(ApiResponse.success(
                 "Resent verification code!",
                 null
         ));
@@ -88,8 +82,7 @@ public class AuthenticationController {
     public ResponseEntity<?> authenticateUser (
             @Valid @RequestBody AuthenticationRequest request
     ) {
-        return ResponseEntity.ok( new ApiResponse<>(
-                true,
+        return ResponseEntity.ok(ApiResponse.success(
                 "Logging in successfully",
                 authenticationService.authenticate(request)
         ));
@@ -101,8 +94,7 @@ public class AuthenticationController {
     ) {
         adminService.createAdmin(request);
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.created(
                         "Successfully create ADMIN",
                         null
                 )
@@ -114,8 +106,7 @@ public class AuthenticationController {
             @RequestBody RefreshTokenRequest request
     ) {
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.success(
                         "Refreshed token",
                         authenticationService.refreshToken(request.getRefreshToken())
                 )
@@ -134,8 +125,7 @@ public class AuthenticationController {
         }
         authenticationService.logout(request, accessToken);
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.success(
                         "Logout successfully",
                         null
                 )
@@ -146,8 +136,7 @@ public class AuthenticationController {
     public ResponseEntity<?> forgotPassword( @RequestBody ForgotPasswordRequest request){
         authenticationService.forgotPassword(request.getEmail());
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.success(
                         "Your verification code has been send to your email",
                         null
                 )
@@ -158,8 +147,7 @@ public class AuthenticationController {
     public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request){
         authenticationService.resetPassword(request);
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.success(
                         "Reset Password Successfully",
                         null
                 )
@@ -170,8 +158,7 @@ public class AuthenticationController {
     public ResponseEntity<?> verify2faLogin (
             @Valid @RequestBody Verify2faLoginRequest request
     ) {
-        return ResponseEntity.ok( new ApiResponse<>(
-                true,
+        return ResponseEntity.ok(ApiResponse.success(
                 "Logging in successfully",
                 authenticationService.verifyTwoFactorLogin(request.getEmail(),request.getOtpCode(), request.getDeviceId())
         ));

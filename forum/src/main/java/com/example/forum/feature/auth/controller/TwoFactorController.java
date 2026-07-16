@@ -21,8 +21,7 @@ public class TwoFactorController {
             @AuthenticationPrincipal UserEntity user
             ){
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.success(
                         "get secret key successfully",
                         twoFactorService.enableTwoFactor(user.getEmail())
                 )
@@ -35,8 +34,7 @@ public class TwoFactorController {
             @AuthenticationPrincipal UserEntity user
             ){
         return ResponseEntity.ok(
-                        new ApiResponse<>(
-                                true,
+                ApiResponse.success(
                                 "Your account is verified, Your backup code here!",
                                 twoFactorService.verifyOtp(user.getEmail(), request.getOtpCode())
                         )
@@ -52,17 +50,15 @@ public class TwoFactorController {
         twoFactorService.disable2fa(user,request.getPassword());
 
         return ResponseEntity.ok(
-                        new ApiResponse<>(
-                                true,
-                                "2FA disabled successfully",
-                                null));
+                        ApiResponse.success(
+                                "2FA disabled successfully"
+                        ));
     }
 
     @GetMapping("/isEnable")
     public ResponseEntity<?> is2faEnable(){
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.success(
                         "Get 2fa status",
                         twoFactorService.is2faEnable()
                 )

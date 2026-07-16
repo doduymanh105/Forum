@@ -2,6 +2,7 @@ package com.example.forum.core.exception;
 
 import com.example.forum.common.constant.MessageConstants;
 import com.example.forum.common.dto.ApiResponse;
+import org.apache.http.protocol.HTTP;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,8 +29,8 @@ public class GlobalExceptionHandler {
                 error -> errors.put(error.getField(), error.getDefaultMessage())
         );
         return ResponseEntity.badRequest().body(
-                new ApiResponse<>(
-                        false,
+                ApiResponse.error(
+                        HttpStatus.BAD_REQUEST.value(),
                         "validation failed",
                         errors
                 )
@@ -39,29 +40,29 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<?>> handleIllegalArgumentException(IllegalArgumentException ex) {
         return ResponseEntity.badRequest().body(
-                new ApiResponse<>(false, ex.getMessage(), null)
+                ApiResponse.error(HttpStatus.BAD_REQUEST.value(), ex.getMessage())
         );
     }
 
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ApiResponse<?>> handleResponseStatusException(ResponseStatusException ex){
         return ResponseEntity.status(ex.getStatusCode()).body(
-                new ApiResponse<>(false, ex.getReason(), null)
+                ApiResponse.error(ex.getStatusCode().value(), ex.getReason())
         );
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<?>> handleResourceNotFound(ResourceNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                new ApiResponse<>(false, ex.getMessage(), null)
+                ApiResponse.error(HttpStatus.NOT_FOUND.value(), ex.getMessage())
         );
     }
 
     @ExceptionHandler(EmailAlreadyExistsException.class)
     public ResponseEntity<ApiResponse<?>> handleEmailAlreadyUsed(EmailAlreadyExistsException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(
-                new ApiResponse<>(
-                        false,
+                ApiResponse.error(
+                        HttpStatus.CONTINUE.value(),
                         "Email was used!",
                         ex.getMessage()
                 )
@@ -72,7 +73,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<?>> handleAccessDeniedException(AccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
-                new ApiResponse<>(false, "Access denied", null)
+                ApiResponse.error(HttpStatus.FORBIDDEN.value(), "Access denied")
         );
     }
 
@@ -80,11 +81,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> handleBadRequestException(BadRequestException ex){
         return ResponseEntity.
                 status(HttpStatus.BAD_REQUEST)
-                .body( new ApiResponse<>(
-                        false,
-                        ex.getMessage(),
-                        null
-
+                .body( ApiResponse.error(
+                        HttpStatus.BAD_REQUEST.value(),
+                        ex.getMessage()
                 ));
     }
 
@@ -92,10 +91,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> handleNotLoggedInException(NotLoggedInException e){
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(new ApiResponse<>(
-                        false,
-                        e.getMessage(),
-                        null
+                .body(ApiResponse.error(
+                        HttpStatus.UNAUTHORIZED.value(),
+                        e.getMessage()
                 ));
 
     }
@@ -104,20 +102,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> handleOtpVerification(OtpVerificationException e){
         return ResponseEntity.
                 status(HttpStatus.BAD_REQUEST)
-                .body( new ApiResponse<>(
-                        false,
-                        e.getMessage(),
-                        null
+                .body(ApiResponse.error(
+                        HttpStatus.BAD_REQUEST.value(),
+                        e.getMessage()
                 ));
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<?> handleMaxUploadSizeException(MaxUploadSizeExceededException maxUploadSizeExceededException){
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
-                .body(new ApiResponse<>(
-                        false,
-                        MessageConstants.UPLOAD_LIMIT_EXCEEDED,
-                        null
+                .body(ApiResponse.error(
+                        HttpStatus.PAYLOAD_TOO_LARGE.value(),
+                        MessageConstants.UPLOAD_LIMIT_EXCEEDED
                 ));
     }
 
@@ -146,9 +142,10 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
-                .body(ApiResponse.<String>builder()
-                        .message(message)
-                        .build());
+                .body(ApiResponse.error(
+                        HttpStatus.CONTINUE.value(),
+                        message
+                ));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -156,7 +153,10 @@ public class GlobalExceptionHandler {
             HttpMessageNotReadableException ex
     ){
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.builder().message("Input must be in allowed range").build());
+                .body(ApiResponse.error(
+                        HttpStatus.BAD_REQUEST.value(),
+                        "Input must be in allowed range"
+                        ));
     }
 
 }

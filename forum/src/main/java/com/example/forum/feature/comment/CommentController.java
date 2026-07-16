@@ -27,8 +27,7 @@ public class CommentController {
             ) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body( new ApiResponse<>(
-                        true,
+                .body( ApiResponse.created(
                         "Comment created",
                         commentService.createComment(postId,request)
                 ));
@@ -37,10 +36,10 @@ public class CommentController {
     ResponseEntity<?> getCommentWithReplyCount(
             @RequestParam Long postId
     ) {
-        return ResponseEntity.ok( new ApiResponse<>(
-                true,
+        return ResponseEntity.ok(
+                ApiResponse.success(
                 "get successfully",
-                commentService.getListOfCommentAndCountReplyComment(postId)
+                        commentService.getListOfCommentAndCountReplyComment(postId)
         ));
     }
     // for specific comment
@@ -51,8 +50,7 @@ public class CommentController {
             @RequestParam Long parentId
     ) {
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.success(
                         "get successfully",
                         commentService.getListOfCommentAndCountReplyComment(postId,parentPath,parentId)
                 )
@@ -63,25 +61,18 @@ public class CommentController {
     public ResponseEntity<?> getCommentsPaginated(
             @RequestParam Long postId, // Nhận postId
 
-            // Thần kỳ: Spring Boot tự động nhận 'page', 'size', và 'sort'
+            // Spring Boot tự động nhận 'page', 'size', và 'sort'
             // và gom chúng vào một đối tượng 'Pageable'
             @PageableDefault(
-                    size = 4, // Kích thước trang mặc định (giống code Nuxt)
-                    sort = "createdAt", // Sắp xếp theo trường 'createdAt'
-                    direction = Sort.Direction.DESC // Sắp xếp giảm dần
+                    size = 4,
+                    sort = "createdAt",
+                    direction = Sort.Direction.DESC
             ) Pageable pageable
     ) {
-        // Chú ý: Code Supabase cũ có '.eq('order', 1)'
-        // có thể nghĩa là chỉ lấy comment cấp 1 (top-level)
-        // Bạn cần báo cho Service của bạn xử lý logic đó
-
-        // Bạn sẽ cần tạo hàm 'getTopLevelComments' trong Service
-        // để nhận 'postId' và 'pageable'
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.success(
                         "Get comments successfully",
-                        commentService.getTopLevelComments(postId, pageable) // <-- Sửa hàm service
+                        commentService.getTopLevelComments(postId, pageable)
                 )
         );
     }
@@ -89,8 +80,7 @@ public class CommentController {
     @GetMapping("/getReplies/{parentId}")
     public ResponseEntity<?> getReplies(@PathVariable Long parentId) {
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.success(
                         "Replies fetched successfully",
                         commentService.getReplies(parentId)
                 )
@@ -102,8 +92,7 @@ public class CommentController {
             @RequestParam String path
     ){
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.success(
                         "get successfully",
                         commentService.getListOfCommentByPath(postId, path)
                 )
@@ -116,10 +105,10 @@ public class CommentController {
             @PathVariable Long commentId,
             @RequestBody UpdateCommentRequest request
     ) {
-        return ResponseEntity.ok(new ApiResponse<>(
-                true,
-                "Comment updated!",
-                commentService.updateComment(commentId, request)
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "Comment updated!",
+                        commentService.updateComment(commentId, request)
         ));
     }
 
@@ -129,8 +118,7 @@ public class CommentController {
     ) {
         commentService.softDeletedComment(commentId);
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.success(
                         "Comment deleted!",
                         null
                 )
@@ -144,8 +132,7 @@ public class CommentController {
     ){
         commentService.hardDeletedComment(commentId);
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.success(
                         "Permanently deleted comment",
                         null
                 )

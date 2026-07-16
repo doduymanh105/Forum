@@ -19,8 +19,7 @@ public class UserController {
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(Authentication authentication) {
         UserEntity userEntity = (UserEntity) authentication.getPrincipal();
-        return ResponseEntity.ok(new ApiResponse<>(
-                true,
+        return ResponseEntity.ok(ApiResponse.success(
                 "Current user",
                 userService.getCurrentUser(userEntity)
         ));
@@ -28,10 +27,10 @@ public class UserController {
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getUser(@PathVariable Long id) {
-        return ResponseEntity.ok( new ApiResponse<>(
-                true,
+        return ResponseEntity.ok(
+                ApiResponse.success(
                 "get user by id",
-                userService.getUserInfor(id)
+                        userService.getUserInfor(id)
         ));
     }
 
@@ -43,9 +42,8 @@ public class UserController {
             @RequestParam(defaultValue = "desc") String sortDirect,
             @RequestParam(defaultValue = "") String keyword
     ){
-        return ResponseEntity.ok(new ApiResponse<>(
-                true,
-                "",
+        return ResponseEntity.ok(ApiResponse.success(
+                "Get all users success",
                 userService.getUsers(page, size, sortBy,sortDirect, keyword)
         ));
     }
@@ -53,8 +51,7 @@ public class UserController {
 
     @GetMapping("/all")
     public ResponseEntity<?> getAllUsers() {
-        return ResponseEntity.ok(new ApiResponse<>(
-                true,
+        return ResponseEntity.ok(ApiResponse.success(
                 "get all users",
                 userService.getAllUsers()
         ));
@@ -66,10 +63,8 @@ public class UserController {
             @RequestBody ChangePasswordRequest request
             ) {
         userService.changePassword(id, request);
-        return ResponseEntity.ok(new ApiResponse<>(
-                true,
-                "Password is successfully changed",
-                null
+        return ResponseEntity.ok(ApiResponse.success(
+                "Password is successfully changed"
         ));
     }
 
@@ -78,8 +73,7 @@ public class UserController {
             @PathVariable Long id,
             @RequestBody UserUpdateRequest request
     ) {
-        return ResponseEntity.ok(new ApiResponse<>(
-                true,
+        return ResponseEntity.ok(ApiResponse.success(
                 "Update user successfully!",
                 userService.updateUser(id, request)
         ));
@@ -89,10 +83,8 @@ public class UserController {
     public ResponseEntity<?> hardDeleteUser(@PathVariable Long id) {
         userService.hardDeleteUser(id);
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
-                        "User is permanently deleted",
-                        null
+                ApiResponse.success(
+                        "User is permanently deleted"
                 )
         );
     }
@@ -100,10 +92,8 @@ public class UserController {
     @PatchMapping("/{id}")
     public ResponseEntity<?> softDeleteUser(@PathVariable Long id) {
         userService.softDeleteUser(id);
-        return ResponseEntity.ok(new ApiResponse<>(
-                true,
-                "User is temporary deleted",
-                null
+        return ResponseEntity.ok(ApiResponse.success(
+                "User is temporary deleted"
         ));
     }
 }

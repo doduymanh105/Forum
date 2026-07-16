@@ -11,7 +11,7 @@ public class TestWsController {
 
     private final SimpMessagingTemplate template;
 
-    @GetMapping("/api/test-ws")
+    @GetMapping("/forum/test-ws")
     public String testWs(){
         template.convertAndSend("/topic/test", "Chào 500 anh em! Tin nhắn này được bắn từ REST API lúc " + System.currentTimeMillis());
         return "Đã ra lệnh cho WebSocket bắn tin!";

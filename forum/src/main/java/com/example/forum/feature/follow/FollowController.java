@@ -20,10 +20,8 @@ public class FollowController {
         followService.followUser(followingId);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(new ApiResponse<>(
-                        true,
-                        "Successfully, you have followed this user!",
-                        null
+                .body(ApiResponse.success(
+                        "Successfully, you have followed this user!"
                 ));
     }
 
@@ -34,8 +32,7 @@ public class FollowController {
             @RequestParam( defaultValue = "", required = false) String keyword
     ) {
        return ResponseEntity.ok(
-               new ApiResponse<>(
-                       true,
+               ApiResponse.success(
                        "List of followers",
                        followService.getFollowers(page,size,keyword)
                )) ;
@@ -48,8 +45,7 @@ public class FollowController {
             @RequestParam( defaultValue = "", required = false) String keyword
     ) {
        return ResponseEntity.ok(
-               new ApiResponse<>(
-                       true,
+               ApiResponse.success(
                        "List of followings",
                        followService.getFollowings(page,size,keyword)
                )) ;
@@ -59,8 +55,7 @@ public class FollowController {
     ResponseEntity<?> getNumberOfFollower(
             @PathVariable Long userId
     ) {
-        return ResponseEntity.ok(new ApiResponse<>(
-                true,
+        return ResponseEntity.ok(ApiResponse.success(
                 "Number of followers",
                 followService.getNumberOfFollower(userId)
         ));
@@ -70,10 +65,10 @@ public class FollowController {
     ResponseEntity<?> getNumberOfFollowing(
             @PathVariable Long userId
     ) {
-        return ResponseEntity.ok(new ApiResponse<>(
-                true,
+        return ResponseEntity.ok(
+                ApiResponse.success(
                 "Number of followings",
-                followService.getNumberOfFollowing(userId)
+                        followService.getNumberOfFollowing(userId)
         ));
     }
 
@@ -82,10 +77,9 @@ public class FollowController {
             @PathVariable Long followingId
     ) {
         followService.unfollow(followingId);
-        return ResponseEntity.ok(new ApiResponse<>(
-                true,
-                "Successfully, you have unfollowed this user",
-                null
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                "Successfully, you have unfollowed this user"
         ));
     }
 
@@ -93,10 +87,8 @@ public class FollowController {
     @DeleteMapping("/me/follower/{followerId}/remove")
     ResponseEntity<?> removeFollower(@PathVariable Long followerId) {
         followService.removeFollower(followerId);
-        return ResponseEntity.ok(new ApiResponse<>(
-                true,
-                "Successfully, the follower has been removed",
-                null
+        return ResponseEntity.ok(ApiResponse.success(
+                "Successfully, the follower has been removed"
         ));
     }
 

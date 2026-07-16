@@ -21,8 +21,7 @@ public class PresenceController {
     @PostMapping("/check")
     public ResponseEntity<ApiResponse<?>> checkOnlineUsers(@RequestBody List<Long> userIds) {
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.success(
                         "Online user",
                         onlineOfflineService.checkOnlineStatus(userIds)
                 )
