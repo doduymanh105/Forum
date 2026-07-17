@@ -32,8 +32,7 @@ public class PostController {
             ) {
         PostResponseDto postResponse = postService.createPost(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.created(
                         "Create post successfully",
                         postResponse
                 )
@@ -44,8 +43,7 @@ public class PostController {
     @GetMapping("/{postId}")
     public ResponseEntity<?> getPostById(@PathVariable Long postId) {
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.success(
                         "get post by id successfully",
                         postService.getPost(postId)
                 )
@@ -54,13 +52,12 @@ public class PostController {
 
     @GetMapping()
     public ResponseEntity<?> getPostByOwner(
-            @RequestParam(required = true) Long userId,
+            @RequestParam Long userId,
             @RequestParam(defaultValue = "") String keyword,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
             ){
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.success(
                         "get post by user successfully",
                         postService.getPostByUser(userId, keyword, pageable)
                 )
@@ -77,8 +74,7 @@ public class PostController {
     ) {
         System.out.println("GET-getPosts");
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.success(
                         "get post by filter",
                         postService.getPosts(page, size, sortBy, sortDirect, keyword)
                 )
@@ -90,8 +86,7 @@ public class PostController {
             @PathVariable Long id,
             @RequestBody UpdatePostRequest request
             ){
-        return ResponseEntity.ok(new ApiResponse<>(
-                true,
+        return ResponseEntity.ok(ApiResponse.success(
                 "Updated",
                 postService.updatePost(id, request)
         ));
@@ -100,8 +95,7 @@ public class PostController {
     @PatchMapping("/{id}/soft-delete")
     public ResponseEntity<?> softDeletePost(@PathVariable Long id){
         postService.softDeletePost(id);
-        return ResponseEntity.ok(new ApiResponse<>(
-                true,
+        return ResponseEntity.ok(ApiResponse.success(
                 "Post is temporaty deleted!",
                null
         ));
@@ -111,8 +105,7 @@ public class PostController {
     public ResponseEntity<?> hardDeletePost(@PathVariable Long id){
         postService.hardDeletePost(id);
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.success(
                         "Post is permanently deleted",
                         null
                 )
@@ -127,7 +120,7 @@ public class PostController {
         PostResponseDto updatedPost = postService.addMediaToPost(postId, files);
 
         return ResponseEntity.ok(
-                new ApiResponse<>(true, "Added media successfully", updatedPost)
+                ApiResponse.success( "Added media successfully", updatedPost)
         );
     }
 
@@ -139,8 +132,7 @@ public class PostController {
         postService.removeMediaFromPost(postId, mediaId);
 
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.success(
                         "Remove media successfully",
                         null
                 )

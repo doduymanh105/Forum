@@ -21,8 +21,7 @@ public class UploadController {
             @RequestPart("file") MultipartFile file
     ) {
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.success(
                         "Upload avatar successfully",
                         cloudinaryService.uploadImage(file)
                 )
@@ -34,8 +33,7 @@ public class UploadController {
             @RequestPart("files") List<MultipartFile> files
     ) {
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.success(
                         "Upload post media successfully",
                         cloudinaryService.uploadImages(files)
                 )

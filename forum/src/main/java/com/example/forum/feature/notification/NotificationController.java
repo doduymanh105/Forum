@@ -35,8 +35,7 @@ public class NotificationController {
             @RequestParam(required = false) Boolean isRead
     ) {
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.success(
                         "List of notification",
                         notificationService.getNotificationsWithReadStatus(page,size,keyword,isRead)
                 )
@@ -46,8 +45,7 @@ public class NotificationController {
     @GetMapping("/me/notification/count")
     ResponseEntity<?> getNumberOfNotifications(){
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.success(
                         "Number of unread notifications",
                         notificationService.countUnreadNotifications()
                 )
@@ -57,8 +55,7 @@ public class NotificationController {
     @PatchMapping("/me/notification/markAllRead")
     ResponseEntity<?> markAllRead(){
         notificationService.markAllAsRead();
-        return ResponseEntity.ok(new ApiResponse<>(
-                true,
+        return ResponseEntity.ok(ApiResponse.success(
                 "Marked All notification as read",
                 null
         ));
@@ -67,8 +64,7 @@ public class NotificationController {
     ResponseEntity<?> markAsRead(
             @PathVariable Long id){
         notificationService.markAsRead(id);
-        return ResponseEntity.ok(new ApiResponse<>(
-                true,
+        return ResponseEntity.ok(ApiResponse.success(
                 "Marked as read",
                 null
         ));
@@ -77,20 +73,16 @@ public class NotificationController {
     @PatchMapping("/me/notification/{id}/archive")
     public ResponseEntity<ApiResponse<Void>> archiveNotification(@PathVariable Long id) {
         notificationService.archiveNotification(id);
-        return ResponseEntity.ok(new ApiResponse<>(
-                true,
-                "Notification archived",
-                null
+        return ResponseEntity.ok(ApiResponse.success(
+                "Notification archived"
         ));
     }
 
     @DeleteMapping("/me/notification/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteNotification(@PathVariable Long id) {
         notificationService.deleteNotification(id);
-        return ResponseEntity.ok(new ApiResponse<>(
-                true,
-                "Notification deleted",
-                null
+        return ResponseEntity.ok(ApiResponse.success(
+                "Notification deleted"
         ));
     }
 

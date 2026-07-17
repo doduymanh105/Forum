@@ -17,8 +17,7 @@ public class VoteController {
             @PathVariable Long post_id,
             @RequestParam VoteType voteType
     ){
-        return ResponseEntity.ok(new ApiResponse<>(
-                true,
+        return ResponseEntity.ok(ApiResponse.success(
                 "Vote success",
                 voteService.votePost(post_id, voteType)
         ));
@@ -30,8 +29,7 @@ public class VoteController {
             @RequestParam VoteType voteType
             ) {
 
-        return ResponseEntity.ok(new ApiResponse<>(
-                true,
+        return ResponseEntity.ok(ApiResponse.success(
                 "list of vote by vote_type",
                 voteService.findVoteOfPost(post_id, voteType)
         ));

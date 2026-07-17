@@ -1,18 +1,18 @@
 package com.example.forum.feature.chat.controller;
 
 
+import com.example.forum.common.dto.ApiResponse;
 import com.example.forum.feature.chat.service.ChatParticipantService;
 import com.example.forum.feature.chat.dto.chatRequestDto.AddNewMemberRequest;
 import com.example.forum.feature.chat.dto.chatRequestDto.ChangeRoleRequest;
 import com.example.forum.feature.chat.dto.chatRequestDto.UpdateChatSettingRequest;
-import com.example.forum.feature.chat.dto.chatResponseDto.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/chats")
+@RequestMapping("/forum/chats")
 @RequiredArgsConstructor
 public class ChatParticipantController {
 

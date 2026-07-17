@@ -1,11 +1,11 @@
 package com.example.forum.feature.chat.controller;
 
+import com.example.forum.common.dto.ApiResponse;
 import com.example.forum.feature.chat.service.ChatService;
 import com.example.forum.feature.chat.dto.chatRequestDto.CreateDirectChatRequest;
 import com.example.forum.feature.chat.dto.chatRequestDto.CreateGroupChatRequest;
 import com.example.forum.feature.chat.dto.chatRequestDto.TypingEvent;
 import com.example.forum.feature.chat.dto.chatRequestDto.UpdateChatRequest;
-import com.example.forum.feature.chat.dto.chatResponseDto.ApiResponse;
 import com.example.forum.feature.chat.dto.chatResponseDto.ChatMessageResponse;
 import com.example.forum.feature.chat.dto.chatResponseDto.ChatResponse;
 import com.example.forum.feature.notification.WebsocketNotificationService;
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/api/chats")
+@RequestMapping("/forum/chats")
 @RequiredArgsConstructor
 public class ChatController {
 
@@ -54,7 +54,7 @@ public class ChatController {
             @RequestBody CreateDirectChatRequest request
             ){
         return ResponseEntity.ok(
-                ApiResponse.success(
+                ApiResponse.created(
                         "Created chat successfully"
                 , chatService.createChat(request.getId()))
         );
@@ -65,7 +65,7 @@ public class ChatController {
             @RequestBody CreateGroupChatRequest request
     ){
         return ResponseEntity.ok(
-                ApiResponse.success(
+                ApiResponse.created(
                         "GroupChat is created",
                         chatService.createGroupChat(request)
                 )

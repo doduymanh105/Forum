@@ -29,8 +29,7 @@ public class DeviceController {
         System.out.println(currentUser.toString());
 
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
+                ApiResponse.success(
                         "Get All Devices Successfully",
                         authenticationService.getAllDevice(currentUser, currentDeviceId)
                 )
@@ -45,10 +44,8 @@ public class DeviceController {
     ){
         authenticationService.revokeDevice(user, deviceId);
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
-                        "Logout successfully",
-                        null
+                ApiResponse.success(
+                        "Logout successfully"
                 )
         );
     }
@@ -60,9 +57,8 @@ public class DeviceController {
     ) {
         authenticationService.revokeAllDevice(currentUser);
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        true,
-                        "Logout successfully",
+                ApiResponse.success(
+                        "Logout all devices successfully",
                         null
                 )
         );

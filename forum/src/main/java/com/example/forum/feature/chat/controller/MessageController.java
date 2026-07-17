@@ -1,10 +1,10 @@
 package com.example.forum.feature.chat.controller;
 
 
+import com.example.forum.common.dto.ApiResponse;
 import com.example.forum.feature.chat.service.MessageService;
 import com.example.forum.feature.chat.dto.chatRequestDto.EditMessageRequest;
 import com.example.forum.feature.chat.dto.chatRequestDto.MessageRequest;
-import com.example.forum.feature.chat.dto.chatResponseDto.ApiResponse;
 import com.example.forum.feature.chat.dto.chatResponseDto.MessageResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/api/chats")
+@RequestMapping("/forum/chats")
 @RequiredArgsConstructor
 public class MessageController {
 
