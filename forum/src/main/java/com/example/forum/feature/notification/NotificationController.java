@@ -2,12 +2,9 @@ package com.example.forum.feature.notification;
 
 import com.example.forum.common.utils.SecurityUtils;
 import com.example.forum.common.dto.ApiResponse;
-import com.example.forum.common.service.sse.SseService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
 @RequestMapping("/forum/user")
@@ -15,14 +12,13 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 public class NotificationController {
 
     private final NotificationService notificationService;
-    private final SseService sseService;
     private final SecurityUtils securityUtils;
 
-    @GetMapping(value = "/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter subscribe(){
-        Long currentUserId = securityUtils.getCurrentUserId();
-        return sseService.subscribe(currentUserId);
-    }
+//    @GetMapping(value = "/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+//    public SseEmitter subscribe(){
+//        Long currentUserId = securityUtils.getCurrentUserId();
+//        return sseService.subscribe(currentUserId);
+//    }
 
 
 

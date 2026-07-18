@@ -13,7 +13,6 @@ import com.example.forum.feature.chat.repository.EventNotificationRepository;
 import com.example.forum.feature.follow.FollowRepository;
 import com.example.forum.feature.user.UserRepository;
 import com.example.forum.common.utils.SecurityUtils;
-import com.example.forum.common.service.sse.SseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -34,7 +33,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final UserRepository userRepository;
 
     private final SecurityUtils securityService;
-    private final SseService sseService;
+    private final WebsocketNotificationService websocketNotificationService;
 
     @Override
     public NotificationEvent createEvent(EventType eventType, UserEntity creator, String description, Long referenceId, String referenceType) {
@@ -88,7 +87,7 @@ public class NotificationServiceImpl implements NotificationService {
 
             for (Notification noti : savedNoti){
                 NotificationDto notificationDto = mapSingleToDto(noti);
-                sseService.sendRealTimeEvent(noti.getUserEntity().getUserId(), notificationDto);
+                websocketNotificationService.sendPrivateNotification(noti.getUserEntity().getUserId(), notificationDto);
             }
         }
     }
@@ -107,7 +106,7 @@ public class NotificationServiceImpl implements NotificationService {
         Notification savedNoti = notificationRepository.save(notification);
 
         NotificationDto dto = mapSingleToDto(savedNoti);
-        sseService.sendRealTimeEvent(receiver.getUserId(), dto);
+        websocketNotificationService.sendPrivateNotification(receiver.getUserId(), dto);
     }
 
     @Override
