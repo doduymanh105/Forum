@@ -47,6 +47,9 @@ public class PostEntity {
     @Column(name = "downvotes")
     private Long downvotes;
 
+    @Column(name = "comment_count")
+    private int commentCount = 0;
+
     @Column(name = "is_archived")
     private Boolean isArchived;
 

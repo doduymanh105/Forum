@@ -1,7 +1,9 @@
 package com.example.forum.feature.post;
 
 import com.example.forum.common.constant.MessageConstants;
+import com.example.forum.common.dto.CursorResponse;
 import com.example.forum.common.dto.PagedResponse;
+import com.example.forum.feature.follow.FollowRepository;
 import com.example.forum.feature.media.CloudinaryService;
 import com.example.forum.feature.comment.CommentRepository;
 import com.example.forum.feature.media.dto.UploadResponseDto;
@@ -43,6 +45,7 @@ public class PostServiceImpl implements PostService {
     private final CommentRepository commentRepository;
     private final VoteRepository voteRepository;
     private final MediaRepository mediaRepository;
+    private final FollowRepository followRepository;
 
     private final SecurityUtils securityService;
     private final NotificationService notificationService;
@@ -168,10 +171,17 @@ public class PostServiceImpl implements PostService {
 
         List<MediaEntity> mediaEntityList = mediaRepository.findByPostPostId(post.getPostId());
 
+        String postContentPreview = "";
+
         Integer timeRead =0;
         if (post.getPostContent() != null && !post.getPostContent().isEmpty()) {
             int words = post.getPostContent().split("\\s+").length;
             timeRead = (int) Math.ceil((double) words / 150);
+            if(post.getPostContent().length()<=150){
+                postContentPreview=post.getPostContent();
+            } else {
+                postContentPreview = post.getPostContent().substring(0, 150);
+            }
         }
 
         String isVoted = null;
@@ -190,7 +200,7 @@ public class PostServiceImpl implements PostService {
         return PostResponseDto.builder()
                 .postId(post.getPostId())
                 .postTitle(post.getPostTitle())
-                .postContent(post.getPostContent())
+                .postContent(postContentPreview)
                 .thumbnailUrl(post.getThumbnailUrl())
                 .upvotes(post.getUpvotes())
                 .downvotes(post.getDownvotes())
@@ -288,6 +298,50 @@ public class PostServiceImpl implements PostService {
                 postEntitiesPage.getTotalPages(),
                 postEntitiesPage.isLast()
         );
+    }
+
+    @Override
+    public CursorResponse<PostResponseDto> getNewsfeed(String cursor, int size) {
+
+        UserEntity currentUser = securityService.getCurrentUser();
+
+        Double cursorScore = null;
+        Long cursorId = null;
+
+        if (cursor != null && cursor.contains("_")) {
+            String[] parts = cursor.split("_");
+            cursorScore = Double.parseDouble(parts[0]);
+            cursorId = Long.parseLong(parts[1]);
+        }
+
+        Pageable pageable = PageRequest.ofSize(size + 1);
+
+        List<PostEntity> posts = postRepo.getNewsfeedRanking(currentUser.getUserId(),cursorScore, cursorId, pageable);
+
+        boolean hasNext = posts.size() > size;
+        if (hasNext) {
+            posts.remove(posts.size() - 1);
+        }
+
+        List<PostResponseDto> postResponseDtoList = posts.stream()
+                .map(post -> mapToPostResponseDto(post, currentUser))
+                .toList();
+
+        String nextCursor = null;
+        if (!posts.isEmpty()) {
+            PostEntity lastPost = posts.get(posts.size() - 1);
+
+            double hoursDiff = java.time.Duration.between(lastPost.getCreatedAt(), java.time.LocalDateTime.now()).toHours();
+            long up = lastPost.getUpvotes() != null ? lastPost.getUpvotes() : 0;
+            long down = lastPost.getDownvotes() != null ? lastPost.getDownvotes() : 0;
+
+            boolean isFollowing = followRepository.existsById(new FollowId(currentUser.getUserId(), lastPost.getCreator().getUserId()));
+            int followBonus = isFollowing ? 50 : 0;
+
+            double lastScore = ((up - down) * 5) + (lastPost.getCommentCount() * 10) + followBonus - (hoursDiff * 2);
+            nextCursor = lastScore + "_" + lastPost.getPostId();
+        }
+        return new CursorResponse<>(postResponseDtoList, nextCursor, hasNext);
     }
 
     @Override
