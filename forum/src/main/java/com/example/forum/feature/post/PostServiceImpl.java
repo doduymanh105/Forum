@@ -3,6 +3,7 @@ package com.example.forum.feature.post;
 import com.example.forum.common.constant.MessageConstants;
 import com.example.forum.common.dto.CursorResponse;
 import com.example.forum.common.dto.PagedResponse;
+import com.example.forum.common.service.cache.CacheService;
 import com.example.forum.feature.follow.FollowRepository;
 import com.example.forum.feature.media.CloudinaryService;
 import com.example.forum.feature.comment.CommentRepository;
@@ -22,7 +23,11 @@ import com.example.forum.feature.vote.VoteRepository;
 import com.example.forum.feature.media.MediaRepository;
 import com.example.forum.common.utils.SecurityUtils;
 import com.example.forum.feature.notification.NotificationService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,8 +38,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PostServiceImpl implements PostService {
@@ -300,10 +307,43 @@ public class PostServiceImpl implements PostService {
         );
     }
 
-    @Override
-    public CursorResponse<PostResponseDto> getNewsfeed(String cursor, int size) {
+    private static final String CACHE_PREFIX = "newsfeed:user:";
+    private static final long TTL_MINUTES = 3;
+    private final CacheService cacheService;
+    private final ObjectMapper objectMapper;
 
+    @Override
+    public CursorResponse<PostResponseDto> getNewsfeed (String cursor, int size){
         UserEntity currentUser = securityService.getCurrentUser();
+
+        Long currentUserId = (currentUser != null) ? currentUser.getUserId() : 0L;
+
+        if(cursor== null){
+            String cacheKey = CACHE_PREFIX + currentUserId;
+
+            String cachedJson =(String) cacheService.get(cacheKey);
+            if(cachedJson != null){
+                try{
+                    return objectMapper.readValue(cachedJson, new TypeReference<CursorResponse<PostResponseDto>>() {});
+                } catch (JsonProcessingException e) {
+                    log.error("Failed to parse cache JSON for key: {}", cacheKey, e);
+                }
+            }
+            CursorResponse<PostResponseDto> dbResult = getNewsfeedFromDb(currentUserId, null, size, currentUser);
+
+            try{
+                String jsonToCache = objectMapper.writeValueAsString(dbResult);
+                cacheService.set(cacheKey, jsonToCache, TTL_MINUTES, TimeUnit.MINUTES);
+            } catch (JsonProcessingException e) {
+                log.error("Failed to serialize newsfeed to JSON", e);
+            }
+            return dbResult;
+        }
+        return getNewsfeedFromDb(currentUserId, cursor, size, currentUser);
+    }
+
+    @Override
+    public CursorResponse<PostResponseDto> getNewsfeedFromDb(Long userId,String cursor, int size, UserEntity currentUser) {
 
         Double cursorScore = null;
         Long cursorId = null;
