@@ -1,7 +1,10 @@
 package com.example.forum.feature.post;
 
 import com.example.forum.common.constant.MessageConstants;
+import com.example.forum.common.dto.CursorResponse;
 import com.example.forum.common.dto.PagedResponse;
+import com.example.forum.common.service.cache.CacheService;
+import com.example.forum.feature.follow.FollowRepository;
 import com.example.forum.feature.media.CloudinaryService;
 import com.example.forum.feature.comment.CommentRepository;
 import com.example.forum.feature.media.dto.UploadResponseDto;
@@ -20,7 +23,11 @@ import com.example.forum.feature.vote.VoteRepository;
 import com.example.forum.feature.media.MediaRepository;
 import com.example.forum.common.utils.SecurityUtils;
 import com.example.forum.feature.notification.NotificationService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -31,8 +38,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PostServiceImpl implements PostService {
@@ -43,6 +52,7 @@ public class PostServiceImpl implements PostService {
     private final CommentRepository commentRepository;
     private final VoteRepository voteRepository;
     private final MediaRepository mediaRepository;
+    private final FollowRepository followRepository;
 
     private final SecurityUtils securityService;
     private final NotificationService notificationService;
@@ -168,10 +178,17 @@ public class PostServiceImpl implements PostService {
 
         List<MediaEntity> mediaEntityList = mediaRepository.findByPostPostId(post.getPostId());
 
+        String postContentPreview = "";
+
         Integer timeRead =0;
         if (post.getPostContent() != null && !post.getPostContent().isEmpty()) {
             int words = post.getPostContent().split("\\s+").length;
             timeRead = (int) Math.ceil((double) words / 150);
+            if(post.getPostContent().length()<=150){
+                postContentPreview=post.getPostContent();
+            } else {
+                postContentPreview = post.getPostContent().substring(0, 150);
+            }
         }
 
         String isVoted = null;
@@ -190,7 +207,7 @@ public class PostServiceImpl implements PostService {
         return PostResponseDto.builder()
                 .postId(post.getPostId())
                 .postTitle(post.getPostTitle())
-                .postContent(post.getPostContent())
+                .postContent(postContentPreview)
                 .thumbnailUrl(post.getThumbnailUrl())
                 .upvotes(post.getUpvotes())
                 .downvotes(post.getDownvotes())
@@ -288,6 +305,83 @@ public class PostServiceImpl implements PostService {
                 postEntitiesPage.getTotalPages(),
                 postEntitiesPage.isLast()
         );
+    }
+
+    private static final String CACHE_PREFIX = "newsfeed:user:";
+    private static final long TTL_MINUTES = 3;
+    private final CacheService cacheService;
+    private final ObjectMapper objectMapper;
+
+    @Override
+    public CursorResponse<PostResponseDto> getNewsfeed (String cursor, int size){
+        UserEntity currentUser = securityService.getCurrentUser();
+
+        Long currentUserId = (currentUser != null) ? currentUser.getUserId() : 0L;
+
+        if(cursor== null){
+            String cacheKey = CACHE_PREFIX + currentUserId;
+
+            String cachedJson =(String) cacheService.get(cacheKey);
+            if(cachedJson != null){
+                try{
+                    return objectMapper.readValue(cachedJson, new TypeReference<CursorResponse<PostResponseDto>>() {});
+                } catch (JsonProcessingException e) {
+                    log.error("Failed to parse cache JSON for key: {}", cacheKey, e);
+                }
+            }
+            CursorResponse<PostResponseDto> dbResult = getNewsfeedFromDb(currentUserId, null, size, currentUser);
+
+            try{
+                String jsonToCache = objectMapper.writeValueAsString(dbResult);
+                cacheService.set(cacheKey, jsonToCache, TTL_MINUTES, TimeUnit.MINUTES);
+            } catch (JsonProcessingException e) {
+                log.error("Failed to serialize newsfeed to JSON", e);
+            }
+            return dbResult;
+        }
+        return getNewsfeedFromDb(currentUserId, cursor, size, currentUser);
+    }
+
+    @Override
+    public CursorResponse<PostResponseDto> getNewsfeedFromDb(Long userId,String cursor, int size, UserEntity currentUser) {
+
+        Double cursorScore = null;
+        Long cursorId = null;
+
+        if (cursor != null && cursor.contains("_")) {
+            String[] parts = cursor.split("_");
+            cursorScore = Double.parseDouble(parts[0]);
+            cursorId = Long.parseLong(parts[1]);
+        }
+
+        Pageable pageable = PageRequest.ofSize(size + 1);
+
+        List<PostEntity> posts = postRepo.getNewsfeedRanking(currentUser.getUserId(),cursorScore, cursorId, pageable);
+
+        boolean hasNext = posts.size() > size;
+        if (hasNext) {
+            posts.remove(posts.size() - 1);
+        }
+
+        List<PostResponseDto> postResponseDtoList = posts.stream()
+                .map(post -> mapToPostResponseDto(post, currentUser))
+                .toList();
+
+        String nextCursor = null;
+        if (!posts.isEmpty()) {
+            PostEntity lastPost = posts.get(posts.size() - 1);
+
+            double hoursDiff = java.time.Duration.between(lastPost.getCreatedAt(), java.time.LocalDateTime.now()).toHours();
+            long up = lastPost.getUpvotes() != null ? lastPost.getUpvotes() : 0;
+            long down = lastPost.getDownvotes() != null ? lastPost.getDownvotes() : 0;
+
+            boolean isFollowing = followRepository.existsById(new FollowId(currentUser.getUserId(), lastPost.getCreator().getUserId()));
+            int followBonus = isFollowing ? 50 : 0;
+
+            double lastScore = ((up - down) * 5) + (lastPost.getCommentCount() * 10) + followBonus - (hoursDiff * 2);
+            nextCursor = lastScore + "_" + lastPost.getPostId();
+        }
+        return new CursorResponse<>(postResponseDtoList, nextCursor, hasNext);
     }
 
     @Override

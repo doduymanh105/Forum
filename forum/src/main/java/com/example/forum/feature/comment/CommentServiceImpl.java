@@ -107,10 +107,9 @@ public class CommentServiceImpl implements CommentService {
             if(!notificationEvent.getCreatedBy().getUserId().equals(parentComment.getUserEntity().getUserId())){
                 notificationService.notifySpecificUser(parentComment.getUserEntity(), notificationEvent);
             }
-
-
         }
 
+        postRepository.incrementCommentCount(postId);
 
         return mapToCommentResponseDto(comment);
     }
@@ -172,9 +171,12 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Transactional
     public void softDeletedComment(Long commentId) {
         CommentEntity comment = commentRepository.findByCommentIdAndIsDeletedFalse(commentId)
                 .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.COMMENT_NOT_FOUND));
+
+        PostEntity post = comment.getPostEntity();
 
         UserEntity currentUser = securityService.getCurrentUser();
         Long currentUserId = currentUser.getUserId();
@@ -183,6 +185,7 @@ public class CommentServiceImpl implements CommentService {
             throw new AccessDeniedException(MessageConstants.EDIT_OWN_COMMENT);
         }
         comment.setIsDeleted(true);
+        postRepository.decrementCommentCount(post.getPostId());
         commentRepository.save(comment);
     }
 

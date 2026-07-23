@@ -1,5 +1,6 @@
 package com.example.forum.feature.post;
 
+import com.example.forum.common.dto.CursorResponse;
 import com.example.forum.feature.post.dto.CreatePostRequest;
 import com.example.forum.feature.post.dto.UpdatePostRequest;
 import com.example.forum.common.dto.ApiResponse;
@@ -77,6 +78,19 @@ public class PostController {
                 ApiResponse.success(
                         "get post by filter",
                         postService.getPosts(page, size, sortBy, sortDirect, keyword)
+                )
+        );
+    }
+
+    @GetMapping("/newsfeed")
+    public ResponseEntity<?> getNewFeed(
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String cursor
+    ){
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "get newsfeed",
+                        postService.getNewsfeed(cursor, size)
                 )
         );
     }

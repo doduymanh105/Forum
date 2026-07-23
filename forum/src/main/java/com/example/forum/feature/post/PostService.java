@@ -1,5 +1,7 @@
 package com.example.forum.feature.post;
 
+import com.example.forum.common.dto.CursorResponse;
+import com.example.forum.domain.UserEntity;
 import com.example.forum.feature.post.dto.CreatePostRequest;
 import com.example.forum.feature.post.dto.UpdatePostRequest;
 import com.example.forum.common.dto.PagedResponse;
@@ -33,6 +35,10 @@ public interface PostService {
             String sortDirect,
             String keyword
     );
+
+    CursorResponse<PostResponseDto> getNewsfeed (String cursor, int size);
+
+    CursorResponse<PostResponseDto> getNewsfeedFromDb(Long userId, String cursor, int size, UserEntity user);
 
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     PostResponseDto updatePost(Long postId,UpdatePostRequest request);
