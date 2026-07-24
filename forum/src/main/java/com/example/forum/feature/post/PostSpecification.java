@@ -6,6 +6,8 @@ import com.example.forum.domain.Tag;
 import com.example.forum.feature.post.dto.PostFilterRequest;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.ArrayList;
@@ -29,10 +31,25 @@ public class PostSpecification {
             }
 
             if(request.getTags()!= null && !request.getTags().isEmpty()){
-                Join<PostEntity, Tag> joinTags = root.join("tags");
-                predicates.add(joinTags.get("tagId").in(request.getTags()));
-                // Mẹo chống lặp bài: Nếu query trả về nhiều dòng giống nhau do JOIN, báo JPA lọc trùng
-                query.distinct(true);
+//                Join<PostEntity, Tag> joinTags = root.join("tags");
+//                predicates.add(joinTags.get("tagId").in(request.getTags()));
+//                // Mẹo chống lặp bài: Nếu query trả về nhiều dòng giống nhau do JOIN, báo JPA lọc trùng
+//                query.distinct(true);
+
+                for(Long tagId: request.getTags()){
+
+                    Subquery<Long> subquery = query.subquery(Long.class);
+                    Root<PostEntity> subRoot = subquery.from(PostEntity.class);
+
+                    Join<PostEntity, Tag> subJoin = subRoot.join("tags");
+
+                    subquery.select(subRoot.get("postId"))
+                            .where(criteriaBuilder.equal(subJoin.get("tagId"), tagId));
+
+                    // separate condition then link by "and"-> mean: postId must be in this list post_ids which both in provided tags
+                    predicates.add(root.get("postId").in(subquery));
+
+                }
             }
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };

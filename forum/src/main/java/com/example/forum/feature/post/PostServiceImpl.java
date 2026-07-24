@@ -312,11 +312,13 @@ public class PostServiceImpl implements PostService {
     @Override
     public PagedResponse<PostResponseDto> searchPost(PostFilterRequest request, int page, int size) {
 
+        int pageIndex = (page > 0) ? page - 1 : 0;
+
         UserEntity user = securityService.getCurrentUser();
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Pageable pageable = PageRequest.of(pageIndex, size, Sort.by("createdAt").descending());
 
-        Specification specification = PostSpecification.getFilterSpec(request);
+        Specification<PostEntity> specification = PostSpecification.getFilterSpec(request);
 
         Page<PostEntity> postPage = postRepo.findAll(specification, pageable);
 
