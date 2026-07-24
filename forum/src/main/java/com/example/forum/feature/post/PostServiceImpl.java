@@ -9,6 +9,7 @@ import com.example.forum.feature.media.CloudinaryService;
 import com.example.forum.feature.comment.CommentRepository;
 import com.example.forum.feature.media.dto.UploadResponseDto;
 import com.example.forum.feature.post.dto.CreatePostRequest;
+import com.example.forum.feature.post.dto.PostFilterRequest;
 import com.example.forum.feature.post.dto.PostResponseDto;
 import com.example.forum.feature.post.dto.UpdatePostRequest;
 import com.example.forum.domain.*;
@@ -32,6 +33,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -304,6 +306,30 @@ public class PostServiceImpl implements PostService {
                 postEntitiesPage.getTotalElements(),
                 postEntitiesPage.getTotalPages(),
                 postEntitiesPage.isLast()
+        );
+    }
+
+    @Override
+    public PagedResponse<PostResponseDto> searchPost(PostFilterRequest request, int page, int size) {
+
+        UserEntity user = securityService.getCurrentUser();
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        Specification specification = PostSpecification.getFilterSpec(request);
+
+        Page<PostEntity> postPage = postRepo.findAll(specification, pageable);
+
+        List<PostResponseDto> data = postPage.getContent().stream()
+                .map(post-> mapToPostResponseDto( post, user)).toList();
+
+        return new PagedResponse<>(
+                data,
+                postPage.getNumber(),
+                postPage.getSize(),
+                postPage.getTotalElements(),
+                postPage.getTotalPages(),
+                postPage.isLast()
         );
     }
 
