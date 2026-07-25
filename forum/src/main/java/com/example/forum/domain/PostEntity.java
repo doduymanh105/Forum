@@ -66,7 +66,7 @@ public class PostEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private PostStatus status = PostStatus.DRAFT;
+    private PostStatus status = PostStatus.PUBLISHED;
 
 
     @Column(name = "created_at", updatable = false)

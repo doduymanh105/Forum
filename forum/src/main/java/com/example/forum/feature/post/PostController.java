@@ -66,22 +66,22 @@ public class PostController {
         );
     }
 
-//    @GetMapping("/search")
-//    public ResponseEntity<?> getPosts(
-//            @RequestParam(defaultValue = "0") int page,
-//            @RequestParam(defaultValue = "10") int size,
-//            @RequestParam(defaultValue = "createdAt") String sortBy,
-//            @RequestParam(defaultValue = "ASC") String sortDirect,
-//            @RequestParam(defaultValue = "") String keyword
-//    ) {
-//        System.out.println("GET-getPosts");
-//        return ResponseEntity.ok(
-//                ApiResponse.success(
-//                        "get post by filter",
-//                        postService.getPosts(page, size, sortBy, sortDirect, keyword)
-//                )
-//        );
-//    }
+    @GetMapping("/all")
+    public ResponseEntity<?> getPosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDirect,
+            @RequestParam(defaultValue = "") String keyword
+    ) {
+        System.out.println("GET-getPosts");
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "get post by filter",
+                        postService.getPosts(page, size, sortBy, sortDirect, keyword)
+                )
+        );
+    }
 
     @GetMapping("/newsfeed")
     public ResponseEntity<?> getNewFeed(
@@ -98,7 +98,7 @@ public class PostController {
 
     @GetMapping("/search")
     public ResponseEntity<?> searchPosts(
-            @RequestBody PostFilterRequest request,
+            @ModelAttribute PostFilterRequest request,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "0") int page
             ){

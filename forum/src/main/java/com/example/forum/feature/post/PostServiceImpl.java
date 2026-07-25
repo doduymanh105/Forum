@@ -102,7 +102,7 @@ public class PostServiceImpl implements PostService {
 
         notificationService.notifyFollowers(newNotificationEvent);
 
-        return mapToPostResponseDto(post, currentUser);
+        return mapToPostResponseDto(post, currentUser, true);
     }
 
     @Override
@@ -171,19 +171,20 @@ public class PostServiceImpl implements PostService {
 
         saveMediaEntity(mediaInfo, post);
 
-        return mapToPostResponseDto(post, currentUser);
+        return mapToPostResponseDto(post, currentUser, false);
     }
 
-    private PostResponseDto mapToPostResponseDto(PostEntity post, UserEntity currentUser) {
+    private PostResponseDto mapToPostResponseDto(PostEntity post, UserEntity currentUser, boolean singlePost) {
 
         Long commentCount = commentRepository.countByPostEntity(post);
 
         List<MediaEntity> mediaEntityList = mediaRepository.findByPostPostId(post.getPostId());
 
-        String postContentPreview = "";
+        String postContentPreview = post.getPostContent();
 
         Integer timeRead =0;
-        if (post.getPostContent() != null && !post.getPostContent().isEmpty()) {
+
+        if (post.getPostContent() != null && !post.getPostContent().isEmpty() && !singlePost) {
             int words = post.getPostContent().split("\\s+").length;
             timeRead = (int) Math.ceil((double) words / 150);
             if(post.getPostContent().length()<=150){
@@ -257,7 +258,7 @@ public class PostServiceImpl implements PostService {
         UserEntity currentUser = securityService.getCurrentUser();
         PostEntity post= postRepo.findById(postId)
                 .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));
-        return mapToPostResponseDto(post, currentUser);
+        return mapToPostResponseDto(post, currentUser, true);
     }
 
     @Override
@@ -270,7 +271,7 @@ public class PostServiceImpl implements PostService {
         UserEntity currentUser = securityService.getCurrentUserOrNull();
 
         Page<PostEntity> postEntitiesPage = postRepo.findByCreatorUserIdAndIsArchivedFalseAndPostTitleContainingIgnoreCase(userId,keyword, pageable);
-        List<PostResponseDto> postListContent = postEntitiesPage.getContent().stream().map(postEntity -> mapToPostResponseDto(postEntity, currentUser)).toList();
+        List<PostResponseDto> postListContent = postEntitiesPage.getContent().stream().map(postEntity -> mapToPostResponseDto(postEntity, currentUser, false)).toList();
 
         return new PagedResponse<>(
                 postListContent,
@@ -297,7 +298,7 @@ public class PostServiceImpl implements PostService {
         UserEntity currentUser = securityService.getCurrentUserOrNull();
 
         Page<PostEntity> postEntitiesPage = postRepo.findByPostTitleContainingIgnoreCaseAndIsArchivedFalse(keyword, pageable);
-        List<PostResponseDto> postListContent = postEntitiesPage.getContent().stream().map(postEntity -> mapToPostResponseDto(postEntity, currentUser)).toList();
+        List<PostResponseDto> postListContent = postEntitiesPage.getContent().stream().map(postEntity -> mapToPostResponseDto(postEntity, currentUser, false)).toList();
 
         return new PagedResponse<>(
                 postListContent,
@@ -314,16 +315,26 @@ public class PostServiceImpl implements PostService {
 
         int pageIndex = (page > 0) ? page - 1 : 0;
 
+        Sort sort = Sort.by("createdAt").descending();
+
+        if(request.getSortBy() != null){
+            sort = switch (request.getSortBy().toString().toLowerCase()) {
+                case "lowest" -> Sort.by("createdAt").ascending();
+                case "top_vote" -> Sort.by("upvotes").descending();
+                default -> sort;
+            };
+        }
+
         UserEntity user = securityService.getCurrentUser();
 
-        Pageable pageable = PageRequest.of(pageIndex, size, Sort.by("createdAt").descending());
+        Pageable pageable = PageRequest.of(pageIndex, size, sort);
 
         Specification<PostEntity> specification = PostSpecification.getFilterSpec(request);
 
         Page<PostEntity> postPage = postRepo.findAll(specification, pageable);
 
         List<PostResponseDto> data = postPage.getContent().stream()
-                .map(post-> mapToPostResponseDto( post, user)).toList();
+                .map(post-> mapToPostResponseDto( post, user, false)).toList();
 
         return new PagedResponse<>(
                 data,
@@ -392,7 +403,7 @@ public class PostServiceImpl implements PostService {
         }
 
         List<PostResponseDto> postResponseDtoList = posts.stream()
-                .map(post -> mapToPostResponseDto(post, currentUser))
+                .map(post -> mapToPostResponseDto(post, currentUser, false))
                 .toList();
 
         String nextCursor = null;
@@ -443,7 +454,7 @@ public class PostServiceImpl implements PostService {
 
         postRepo.save(post);
 
-        return mapToPostResponseDto(post, currentUser);
+        return mapToPostResponseDto(post, currentUser, true);
     }
 
 

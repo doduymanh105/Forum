@@ -51,6 +51,24 @@ public class PostSpecification {
 
                 }
             }
+
+            if(request.getStartDate()!= null){
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("createdAt"), request.getStartDate()));
+            }
+
+            if(request.getEndDate()!= null){
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("createdAt"), request.getEndDate()));
+            }
+
+            if (request.getMinUpvote() != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("upvotes"), request.getMinUpvote()));
+            }
+
+            if (request.getAuthorId() != null) {
+                predicates.add(criteriaBuilder.equal(root.get("creator").get("userId"), request.getAuthorId()));
+            }
+
+
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
     }
