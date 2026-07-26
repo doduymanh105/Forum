@@ -3,6 +3,7 @@ package com.example.forum.feature.post;
 import com.example.forum.common.dto.CursorResponse;
 import com.example.forum.domain.UserEntity;
 import com.example.forum.feature.post.dto.CreatePostRequest;
+import com.example.forum.feature.post.dto.PostFilterRequest;
 import com.example.forum.feature.post.dto.UpdatePostRequest;
 import com.example.forum.common.dto.PagedResponse;
 import com.example.forum.feature.post.dto.PostResponseDto;
@@ -35,6 +36,8 @@ public interface PostService {
             String sortDirect,
             String keyword
     );
+
+    PagedResponse<PostResponseDto> searchPost (PostFilterRequest request, int page, int size);
 
     CursorResponse<PostResponseDto> getNewsfeed (String cursor, int size);
 

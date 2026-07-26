@@ -2,6 +2,7 @@ package com.example.forum.feature.post;
 
 import com.example.forum.common.dto.CursorResponse;
 import com.example.forum.feature.post.dto.CreatePostRequest;
+import com.example.forum.feature.post.dto.PostFilterRequest;
 import com.example.forum.feature.post.dto.UpdatePostRequest;
 import com.example.forum.common.dto.ApiResponse;
 import com.example.forum.feature.post.dto.PostResponseDto;
@@ -65,7 +66,7 @@ public class PostController {
         );
     }
 
-    @GetMapping("/search")
+    @GetMapping("/all")
     public ResponseEntity<?> getPosts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -92,6 +93,19 @@ public class PostController {
                         "get newsfeed",
                         postService.getNewsfeed(cursor, size)
                 )
+        );
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<?> searchPosts(
+            @ModelAttribute PostFilterRequest request,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "0") int page
+            ){
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "Search post success"
+                , postService.searchPost(request, page, size))
         );
     }
 

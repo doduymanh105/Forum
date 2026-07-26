@@ -9,6 +9,7 @@ import com.example.forum.feature.media.CloudinaryService;
 import com.example.forum.feature.comment.CommentRepository;
 import com.example.forum.feature.media.dto.UploadResponseDto;
 import com.example.forum.feature.post.dto.CreatePostRequest;
+import com.example.forum.feature.post.dto.PostFilterRequest;
 import com.example.forum.feature.post.dto.PostResponseDto;
 import com.example.forum.feature.post.dto.UpdatePostRequest;
 import com.example.forum.domain.*;
@@ -32,6 +33,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -100,7 +102,7 @@ public class PostServiceImpl implements PostService {
 
         notificationService.notifyFollowers(newNotificationEvent);
 
-        return mapToPostResponseDto(post, currentUser);
+        return mapToPostResponseDto(post, currentUser, true);
     }
 
     @Override
@@ -169,19 +171,20 @@ public class PostServiceImpl implements PostService {
 
         saveMediaEntity(mediaInfo, post);
 
-        return mapToPostResponseDto(post, currentUser);
+        return mapToPostResponseDto(post, currentUser, false);
     }
 
-    private PostResponseDto mapToPostResponseDto(PostEntity post, UserEntity currentUser) {
+    private PostResponseDto mapToPostResponseDto(PostEntity post, UserEntity currentUser, boolean singlePost) {
 
         Long commentCount = commentRepository.countByPostEntity(post);
 
         List<MediaEntity> mediaEntityList = mediaRepository.findByPostPostId(post.getPostId());
 
-        String postContentPreview = "";
+        String postContentPreview = post.getPostContent();
 
         Integer timeRead =0;
-        if (post.getPostContent() != null && !post.getPostContent().isEmpty()) {
+
+        if (post.getPostContent() != null && !post.getPostContent().isEmpty() && !singlePost) {
             int words = post.getPostContent().split("\\s+").length;
             timeRead = (int) Math.ceil((double) words / 150);
             if(post.getPostContent().length()<=150){
@@ -255,7 +258,7 @@ public class PostServiceImpl implements PostService {
         UserEntity currentUser = securityService.getCurrentUser();
         PostEntity post= postRepo.findById(postId)
                 .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));
-        return mapToPostResponseDto(post, currentUser);
+        return mapToPostResponseDto(post, currentUser, true);
     }
 
     @Override
@@ -268,7 +271,7 @@ public class PostServiceImpl implements PostService {
         UserEntity currentUser = securityService.getCurrentUserOrNull();
 
         Page<PostEntity> postEntitiesPage = postRepo.findByCreatorUserIdAndIsArchivedFalseAndPostTitleContainingIgnoreCase(userId,keyword, pageable);
-        List<PostResponseDto> postListContent = postEntitiesPage.getContent().stream().map(postEntity -> mapToPostResponseDto(postEntity, currentUser)).toList();
+        List<PostResponseDto> postListContent = postEntitiesPage.getContent().stream().map(postEntity -> mapToPostResponseDto(postEntity, currentUser, false)).toList();
 
         return new PagedResponse<>(
                 postListContent,
@@ -295,7 +298,7 @@ public class PostServiceImpl implements PostService {
         UserEntity currentUser = securityService.getCurrentUserOrNull();
 
         Page<PostEntity> postEntitiesPage = postRepo.findByPostTitleContainingIgnoreCaseAndIsArchivedFalse(keyword, pageable);
-        List<PostResponseDto> postListContent = postEntitiesPage.getContent().stream().map(postEntity -> mapToPostResponseDto(postEntity, currentUser)).toList();
+        List<PostResponseDto> postListContent = postEntitiesPage.getContent().stream().map(postEntity -> mapToPostResponseDto(postEntity, currentUser, false)).toList();
 
         return new PagedResponse<>(
                 postListContent,
@@ -304,6 +307,42 @@ public class PostServiceImpl implements PostService {
                 postEntitiesPage.getTotalElements(),
                 postEntitiesPage.getTotalPages(),
                 postEntitiesPage.isLast()
+        );
+    }
+
+    @Override
+    public PagedResponse<PostResponseDto> searchPost(PostFilterRequest request, int page, int size) {
+
+        int pageIndex = (page > 0) ? page - 1 : 0;
+
+        Sort sort = Sort.by("createdAt").descending();
+
+        if(request.getSortBy() != null){
+            sort = switch (request.getSortBy().toString().toLowerCase()) {
+                case "lowest" -> Sort.by("createdAt").ascending();
+                case "top_vote" -> Sort.by("upvotes").descending();
+                default -> sort;
+            };
+        }
+
+        UserEntity user = securityService.getCurrentUser();
+
+        Pageable pageable = PageRequest.of(pageIndex, size, sort);
+
+        Specification<PostEntity> specification = PostSpecification.getFilterSpec(request);
+
+        Page<PostEntity> postPage = postRepo.findAll(specification, pageable);
+
+        List<PostResponseDto> data = postPage.getContent().stream()
+                .map(post-> mapToPostResponseDto( post, user, false)).toList();
+
+        return new PagedResponse<>(
+                data,
+                postPage.getNumber(),
+                postPage.getSize(),
+                postPage.getTotalElements(),
+                postPage.getTotalPages(),
+                postPage.isLast()
         );
     }
 
@@ -364,7 +403,7 @@ public class PostServiceImpl implements PostService {
         }
 
         List<PostResponseDto> postResponseDtoList = posts.stream()
-                .map(post -> mapToPostResponseDto(post, currentUser))
+                .map(post -> mapToPostResponseDto(post, currentUser, false))
                 .toList();
 
         String nextCursor = null;
@@ -415,7 +454,7 @@ public class PostServiceImpl implements PostService {
 
         postRepo.save(post);
 
-        return mapToPostResponseDto(post, currentUser);
+        return mapToPostResponseDto(post, currentUser, true);
     }
 
 
