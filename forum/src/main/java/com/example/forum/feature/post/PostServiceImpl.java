@@ -174,7 +174,7 @@ public class PostServiceImpl implements PostService {
         return mapToPostResponseDto(post, currentUser, false);
     }
 
-    private PostResponseDto mapToPostResponseDto(PostEntity post, UserEntity currentUser, boolean singlePost) {
+    public PostResponseDto mapToPostResponseDto(PostEntity post, UserEntity currentUser, boolean singlePost) {
 
         Long commentCount = commentRepository.countByPostEntity(post);
 

@@ -26,8 +26,20 @@ public enum ErrorCode {
     NOT_OWNED_MESSAGE(HttpStatus.FORBIDDEN, "You are not creator of this message!"),
     CHAT_MUST_HAVE_ADMIN(HttpStatus.CONFLICT, "Chat must have at least one admin"),
     LAST_ADMIN_CANNOT_LEAVE(HttpStatus.CONFLICT, "Cannot leave because you are the last admin"),
-    GROUP_CHAT_FEATURE(HttpStatus.UNAUTHORIZED, "This feature is belong to group chat")
-    ;
+    GROUP_CHAT_FEATURE(HttpStatus.UNAUTHORIZED, "This feature is belong to group chat"),
+
+    // collection
+
+    SAVE_COLLECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "Collection not found"),
+    COLLECTION_LIMIT_REACH(HttpStatus.CONFLICT, "Maximum number of collection reach"),
+    NOT_OWN_COLLECTION(HttpStatus.FORBIDDEN, "Do not own this collection"),
+
+    // post
+    POST_NOT_FOUND(HttpStatus.NOT_FOUND, "Post not found"),
+
+
+    POST_ALREADY_IN_COLLECTION(HttpStatus.CONFLICT,"Post already saved" ),
+    POST_NOT_IN_COLLECTION(HttpStatus.CONFLICT,"Post not in collection" );
 
     private final HttpStatus status;
     private final String message;
