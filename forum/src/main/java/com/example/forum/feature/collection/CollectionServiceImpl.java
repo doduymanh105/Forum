@@ -55,8 +55,12 @@ public class CollectionServiceImpl implements CollectionService{
         SaveCollection existingCollection = collectionRepository.findByIdAndIsDeletedFalse(request.getCollectionId())
                 .orElseThrow(()-> new AppException(ErrorCode.SAVE_COLLECTION_NOT_FOUND));
 
-        existingCollection.setName(request.getNewName());
-        existingCollection.setThumbnailUrl(request.getNewThumbnailUrl());
+        if(request.getNewName()!= null){
+            existingCollection.setName(request.getNewName());
+        }
+        if(request.getNewThumbnailUrl() != null){
+            existingCollection.setThumbnailUrl(request.getNewThumbnailUrl());
+        }
         collectionRepository.save(existingCollection);
         return mapToCollectionResponseDto(existingCollection);
     }
@@ -144,6 +148,7 @@ public class CollectionServiceImpl implements CollectionService{
     }
 
     @Override
+    @Transactional
     public CollectionResponseDto removePostFromCollection(Long collectionId, Long postId) {
         UserEntity currentUser = securityUtils.getCurrentUser();
 
@@ -165,9 +170,7 @@ public class CollectionServiceImpl implements CollectionService{
 
         postCollectionRepository.delete(postCollection);
 
-        saveCollection.setTotalElements(
-                Math.max(0, saveCollection.getTotalElements() - 1)
-        );
+        saveCollection.setTotalElements(saveCollection.getTotalElements() - 1);
 
         return mapToCollectionResponseDto(saveCollection);
     }

@@ -2,7 +2,6 @@ package com.example.forum.feature.collection;
 
 import com.example.forum.common.dto.ApiResponse;
 import com.example.forum.feature.collection.dto.CreateCollectionRequest;
-import com.example.forum.feature.collection.dto.SearchSavedRequest;
 import com.example.forum.feature.collection.dto.UpdateCollectionRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -48,7 +47,7 @@ public class CollectionController {
 
     @GetMapping("/collections/{id}")
     public ResponseEntity<?> getCollectionById(
-            @RequestParam(name = "id") Long collectionId,
+           @PathVariable(name = "id") Long collectionId,
             @RequestParam(defaultValue = "") String keyword
     ){
         return ResponseEntity.ok(
@@ -95,12 +94,12 @@ public class CollectionController {
 
     @GetMapping("/collections/saved-search")
     public ResponseEntity<?> searchPost(
-            @RequestBody SearchSavedRequest request
+            @RequestParam(required = false) String title
             ){
         return ResponseEntity.ok(
                 ApiResponse.success(
                         "Saved search"
-                , collectionService.searchSaved(request.getTitle()))
+                , collectionService.searchSaved(title))
         );
     }
 

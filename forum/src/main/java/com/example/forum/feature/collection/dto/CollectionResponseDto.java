@@ -2,8 +2,10 @@ package com.example.forum.feature.collection.dto;
 
 import com.example.forum.domain.UserEntity;
 import lombok.Builder;
+import lombok.Data;
 
 import java.time.LocalDateTime;
+@Data
 @Builder
 public class CollectionResponseDto {
     private Long id;
