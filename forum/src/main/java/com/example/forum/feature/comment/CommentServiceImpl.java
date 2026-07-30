@@ -1,6 +1,7 @@
 package com.example.forum.feature.comment;
 
 import com.example.forum.common.constant.MessageConstants;
+import com.example.forum.common.dto.CursorResponse;
 import com.example.forum.common.dto.PagedResponse;
 import com.example.forum.feature.comment.dto.*;
 import com.example.forum.domain.CommentEntity;
@@ -17,6 +18,7 @@ import com.example.forum.feature.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -124,14 +126,26 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public List<CommentDto> getListOfCommentAndCountReplyComment(Long postId) {
+    public CursorResponse<CommentDto> getListOfRootCommentAndCountReplyComment(Long postId, Long cursor, int size) {
 
-        PostEntity post = postRepository.findByPostId(postId)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));
+        if (!postRepository.existsById(postId)) {
+            throw new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND);
+        }
 
-        List<CommentProjection> rows = commentRepository.findCommentsWithReplyCountByPostId(postId);
+        Pageable pageable = PageRequest.ofSize(size+1);
+        List<CommentProjection> rows = commentRepository.findRootCommentsWithReplyCountByPostId(postId, cursor, pageable);
 
-        return rows.stream()
+        boolean hasNext = rows.size() > size;
+        if (hasNext) {
+            rows.remove(rows.size() - 1);
+        }
+
+        String nextCursor = null;
+        if(!rows.isEmpty()){
+            nextCursor= rows.get(rows.size()-1).getCommentId().toString();
+        }
+
+        List<CommentDto> data = rows.stream()
                 .map(row -> CommentDto.builder()
                         .commentId(row.getCommentId())
                         .commentContent(row.getCommentContent())
@@ -145,11 +159,13 @@ public class CommentServiceImpl implements CommentService {
                                 row.getEmail(),
                                 row.getAvatarUrl()
                         ))
-                        .post(new CommentDto.PostInfo(post.getPostId(), post.getPostTitle()))
+                        .postId(postId)
                         .replyCount(row.getReplyCount())//reply count
                         .build()
                 )
                 .toList();
+
+        return new CursorResponse<>(data, nextCursor, hasNext);
     }
 
     @Override
@@ -204,13 +220,18 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public List<CommentDto> getListOfCommentAndCountReplyComment(Long postId, String parentPath, Long parentId) {
-        PostEntity post = postRepository.findByPostId(postId)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));
+    public PagedResponse<CommentDto> getListOfCommentAndCountReplyComment(Long postId, Long parentId, int page, int size) {
 
-        List<CommentProjection> rows = commentRepository.findCommentsWithReplyCountByPostId(postId, parentPath, parentId);
+        int pageIndex = (page > 0) ? page - 1 : 0;
+        Pageable pageable = PageRequest.of(pageIndex, size);
 
-        return rows.stream()
+        if (!postRepository.existsById(postId)) {
+            throw new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND);
+        }
+
+        Page<CommentProjection> pageCommentProjection = commentRepository.findCommentsWithReplyCountByPostId(postId, parentId, pageable);
+
+        List<CommentDto> data= pageCommentProjection.getContent().stream()
                 .map(row -> CommentDto.builder()
                         .commentId(row.getCommentId())
                         .commentContent(row.getCommentContent())
@@ -224,11 +245,20 @@ public class CommentServiceImpl implements CommentService {
                                 row.getEmail(),
                                 row.getAvatarUrl()
                         ))
-                        .post(new CommentDto.PostInfo(post.getPostId(), post.getPostTitle()))
-                        .replyCount(row.getReplyCount())//reply count
+                        .postId(postId)
+                        .replyCount(row.getReplyCount())
                         .build()
                 )
                 .toList();
+        return new PagedResponse<>(
+                data,
+                pageCommentProjection.getNumber()+1,
+                pageCommentProjection.getSize(),
+                pageCommentProjection.getTotalElements(),
+                pageCommentProjection.getTotalPages(),
+                pageCommentProjection.isLast()
+        );
+
     }
 
     @Override
@@ -316,8 +346,8 @@ public class CommentServiceImpl implements CommentService {
 
         return CommentOwnerDto.builder()
                 .id(owner.getUserId())
-                .name(owner.displayUsername()) // Dùng hàm có sẵn
-                .photo(owner.getAvatarUrl()) // Dùng hàm có sẵn
+                .name(owner.displayUsername())
+                .photo(owner.getAvatarUrl())
 
                 .createdAt(owner.getCreatedAt() != null ? owner.getCreatedAt().atOffset(ZoneOffset.UTC) : null)
 
@@ -341,10 +371,7 @@ public class CommentServiceImpl implements CommentService {
                 .updatedAt(comment.getUpdatedAt())
                 .replyCount(0L)
                 .userInfor(mapToUserSummary(comment.getUserEntity()))
-                .post( new CommentDto.PostInfo(
-                        comment.getPostEntity().getPostId(),
-                        comment.getPostEntity().getPostTitle()
-                ))
+                .postId(comment.getPostEntity().getPostId())
                 .build();
     }
     private UserSummaryDto mapToUserSummary(UserEntity user){

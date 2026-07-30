@@ -1,5 +1,6 @@
 package com.example.forum.feature.comment;
 
+import com.example.forum.common.dto.CursorResponse;
 import com.example.forum.feature.comment.dto.CreateCommentRequest;
 import com.example.forum.feature.comment.dto.UpdateCommentRequest;
 import com.example.forum.feature.comment.dto.CommentDto;
@@ -17,7 +18,7 @@ public interface CommentService {
     List<CommentDto> getListOfCommentByPath(Long postId,String path);
 
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
-    List<CommentDto> getListOfCommentAndCountReplyComment(Long postId);
+    CursorResponse<CommentDto> getListOfRootCommentAndCountReplyComment(Long postId, Long cursor, int size);
 
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     CommentDto updateComment(Long commentId, UpdateCommentRequest request);
@@ -29,7 +30,7 @@ public interface CommentService {
     void hardDeletedComment(Long commentId);
 
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
-    List<CommentDto> getListOfCommentAndCountReplyComment(Long postId, String parentPath, Long parentId);
+    PagedResponse<CommentDto> getListOfCommentAndCountReplyComment(Long postId,Long parentId, int page, int size);
 
     PagedResponse<CommentResponseDto> getTopLevelComments(Long postId, Pageable pageable);
 

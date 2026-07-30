@@ -39,12 +39,16 @@ public interface CommentRepository extends JpaRepository<CommentEntity, Long> {
          AND r.comment_id <> c.comment_id
    WHERE c.post_id = :postId
      AND c.is_deleted = false
-   GROUP BY c.comment_id, c.comment_content, c.comment_path,\s
-            c.is_deleted, c.created_at, c.updated_at, c.post_id,
-            u.user_id, u.user_name, u.avatar_url
-   ORDER BY c.comment_path ASC;
+     AND (c.parent_id IS NULL OR c.comment_path = '/')
+     AND (:cursor IS NULL OR c.comment_id < :cursor)
+   GROUP BY c.comment_id, u.user_id, u.user_name, u.avatar_url
+   ORDER BY c.comment_id DESC
 """, nativeQuery = true)
-    List<CommentProjection> findCommentsWithReplyCountByPostId(@Param("postId") Long postId);
+    List<CommentProjection> findRootCommentsWithReplyCountByPostId(
+            @Param("postId") Long postId,
+            @Param("cursor") Long cursor,
+            Pageable pageable
+    );
 
     Optional<CommentEntity> findByCommentIdAndIsDeletedFalse(Long commentId);
 
@@ -68,17 +72,22 @@ public interface CommentRepository extends JpaRepository<CommentEntity, Long> {
             AND r.comment_path LIKE CONCAT(c.comment_path, c.comment_id, '/%')
             AND r.comment_id <> c.comment_id
       WHERE c.post_id = :postId
-        AND c.comment_path like concat(:parentPath, :parentId ,'/')
+        AND c.parent_id = :parentId
         AND c.is_deleted = false
-      GROUP BY c.comment_id, c.comment_content, c.comment_path,
-               c.is_deleted, c.created_at, c.updated_at, c.post_id,
-               u.user_id, u.user_name, u.avatar_url
-      ORDER BY c.comment_path ASC;
-""", nativeQuery = true)
-    List<CommentProjection> findCommentsWithReplyCountByPostId(
+      GROUP BY c.comment_id, u.user_id, u.user_name, u.avatar_url
+      ORDER BY c.comment_id ASC;
+""", nativeQuery = true,
+    countQuery = """
+            SELECT count(*)
+            FROM comments c
+            WHERE c.post_id = :postId
+              AND c.parent_id = :parentId
+              AND c.is_deleted = false
+            """)
+    Page<CommentProjection> findCommentsWithReplyCountByPostId(
             @Param("postId") Long postId,
-            @Param("parentPath") String parentPath,
-            @Param("parentId") Long parentId
+            @Param("parentId") Long parentId,
+            Pageable pageable
     );
 
     Long countByPostEntity(PostEntity post);

@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
+//@CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/forum/post/comment")
 public class CommentController {
 
@@ -32,73 +32,77 @@ public class CommentController {
                         commentService.createComment(postId,request)
                 ));
     }
-    @GetMapping("/getCommentCount")
-    ResponseEntity<?> getCommentWithReplyCount(
-            @RequestParam Long postId
+    @GetMapping("/{postId}/rootCommentWithCount")
+    ResponseEntity<?> getRootCommentWithReplyCount(
+            @PathVariable Long postId,
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "10") int size
     ) {
         return ResponseEntity.ok(
                 ApiResponse.success(
-                "get successfully",
-                        commentService.getListOfCommentAndCountReplyComment(postId)
+                        "Get root comments successfully",
+                        commentService.getListOfRootCommentAndCountReplyComment(postId, cursor, size)
         ));
     }
     // for specific comment
-    @GetMapping("/{postId}/getCommentCount")
+    @GetMapping("/{postId}/{parentId}/replies")
     ResponseEntity<?> getCommentWithReplyCount(
             @PathVariable Long postId,
-            @RequestParam String parentPath,
-            @RequestParam Long parentId
+            @PathVariable Long parentId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+
     ) {
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        "get successfully",
-                        commentService.getListOfCommentAndCountReplyComment(postId,parentPath,parentId)
+                        "Get child comments successfully",
+                        commentService.getListOfCommentAndCountReplyComment(postId,parentId, page, size)
                 )
         );
     }
 
-    @GetMapping("/getPaginated")
-    public ResponseEntity<?> getCommentsPaginated(
-            @RequestParam Long postId, // Nhận postId
+//    @GetMapping("/getPaginated")
+//    public ResponseEntity<?> getCommentsPaginated(
+//            @RequestParam Long postId, // Nhận postId
+//
+//            // Spring Boot tự động nhận 'page', 'size', và 'sort'
+//            // và gom chúng vào một đối tượng 'Pageable'
+//            @PageableDefault(
+//                    size = 4,
+//                    sort = "createdAt",
+//                    direction = Sort.Direction.DESC
+//            ) Pageable pageable
+//    ) {
+//        return ResponseEntity.ok(
+//                ApiResponse.success(
+//                        "Get comments successfully",
+//                        commentService.getTopLevelComments(postId, pageable)
+//                )
+//        );
+//    }
 
-            // Spring Boot tự động nhận 'page', 'size', và 'sort'
-            // và gom chúng vào một đối tượng 'Pageable'
-            @PageableDefault(
-                    size = 4,
-                    sort = "createdAt",
-                    direction = Sort.Direction.DESC
-            ) Pageable pageable
-    ) {
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        "Get comments successfully",
-                        commentService.getTopLevelComments(postId, pageable)
-                )
-        );
-    }
-
-    @GetMapping("/getReplies/{parentId}")
-    public ResponseEntity<?> getReplies(@PathVariable Long parentId) {
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        "Replies fetched successfully",
-                        commentService.getReplies(parentId)
-                )
-        );
-    }
-    @GetMapping("getCommentByPath")
-    ResponseEntity<?> getCommentByPath(
-            @RequestParam Long postId,
-            @RequestParam String path
-    ){
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        "get successfully",
-                        commentService.getListOfCommentByPath(postId, path)
-                )
-
-        );
-    }
+//    @GetMapping("/getReplies/{parentId}")
+//    public ResponseEntity<?> getReplies(@PathVariable Long parentId) {
+//        return ResponseEntity.ok(
+//                ApiResponse.success(
+//                        "Replies fetched successfully",
+//                        commentService.getReplies(parentId)
+//                )
+//        );
+//    }
+//    @GetMapping("getCommentByPath")
+//    ResponseEntity<?> getCommentByPath(
+//            @RequestParam Long postId,
+//            @RequestParam String path
+//    ){
+//        return ResponseEntity.ok(
+//                ApiResponse.success(
+//                        "get successfully",
+//                        commentService.getListOfCommentByPath(postId, path)
+//                )
+//
+//        );
+//    }
 
     @PatchMapping("/{commentId}/update")
     ResponseEntity<?> updateComment (

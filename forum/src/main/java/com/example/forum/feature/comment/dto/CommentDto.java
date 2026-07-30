@@ -22,14 +22,8 @@ public class CommentDto {
     private LocalDateTime updatedAt;
 
     private UserSummaryDto userInfor;
-    private PostInfo post;
 
-    @Data
-    @AllArgsConstructor
-    public static class PostInfo {
-        private Long postId;
-        private String postTitle;
-    }
+    private Long postId;
 
     private Long replyCount;
 }
