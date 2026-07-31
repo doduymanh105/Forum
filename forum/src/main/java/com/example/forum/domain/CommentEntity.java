@@ -28,8 +28,14 @@ public class CommentEntity {
 
     private Long parentId;
 
-//    @Column()
-//    private Integer likes;
+    @Column(name = "upvotes", nullable = false, columnDefinition = "bigint default 0")
+    private Long upvotes = 0L;
+
+    @Column(name = "downvotes", nullable = false, columnDefinition = "bigint default 0")
+    private Long downvotes = 0L;
+
+    @Column(name = "score", nullable = false, columnDefinition = "bigint default 0")
+    private Long score = 0L;
 
     @Column(name = "comment_content", columnDefinition = "TEXT")
     private String commentContent;
