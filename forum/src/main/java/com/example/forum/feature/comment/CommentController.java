@@ -5,9 +5,6 @@ import com.example.forum.feature.comment.dto.CreateCommentRequest;
 import com.example.forum.feature.comment.dto.UpdateCommentRequest;
 import com.example.forum.common.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -35,13 +32,14 @@ public class CommentController {
     @GetMapping("/{postId}/rootCommentWithCount")
     ResponseEntity<?> getRootCommentWithReplyCount(
             @PathVariable Long postId,
-            @RequestParam(required = false) Long cursor,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy
     ) {
         return ResponseEntity.ok(
                 ApiResponse.success(
                         "Get root comments successfully",
-                        commentService.getListOfRootCommentAndCountReplyComment(postId, cursor, size)
+                        commentService.getListOfRootCommentAndCountReplyComment(postId, cursor ,sortBy, size)
         ));
     }
     // for specific comment
@@ -56,7 +54,7 @@ public class CommentController {
         return ResponseEntity.ok(
                 ApiResponse.success(
                         "Get child comments successfully",
-                        commentService.getListOfCommentAndCountReplyComment(postId,parentId, page, size)
+                        commentService.getListOfChildCommentAndCountReplyComment(postId,parentId, page, size)
                 )
         );
     }

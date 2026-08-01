@@ -25,5 +25,10 @@ public class CommentDto {
 
     private Long postId;
 
+    private Long upvotes;
+    private Long downvotes;
+    private Long score;
+    private String userVote;
+
     private Long replyCount;
 }

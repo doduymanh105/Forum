@@ -18,7 +18,7 @@ public interface CommentService {
     List<CommentDto> getListOfCommentByPath(Long postId,String path);
 
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
-    CursorResponse<CommentDto> getListOfRootCommentAndCountReplyComment(Long postId, Long cursor, int size);
+    CursorResponse<CommentDto> getListOfRootCommentAndCountReplyComment(Long postId, String cursor, String sortBy, int size);
 
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     CommentDto updateComment(Long commentId, UpdateCommentRequest request);
@@ -30,7 +30,7 @@ public interface CommentService {
     void hardDeletedComment(Long commentId);
 
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
-    PagedResponse<CommentDto> getListOfCommentAndCountReplyComment(Long postId,Long parentId, int page, int size);
+    PagedResponse<CommentDto> getListOfChildCommentAndCountReplyComment(Long postId, Long parentId, int page, int size);
 
     PagedResponse<CommentResponseDto> getTopLevelComments(Long postId, Pageable pageable);
 

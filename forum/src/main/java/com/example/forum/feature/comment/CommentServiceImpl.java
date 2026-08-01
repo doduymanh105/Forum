@@ -3,6 +3,7 @@ package com.example.forum.feature.comment;
 import com.example.forum.common.constant.MessageConstants;
 import com.example.forum.common.dto.CursorResponse;
 import com.example.forum.common.dto.PagedResponse;
+import com.example.forum.domain.Enum.VoteType;
 import com.example.forum.feature.comment.dto.*;
 import com.example.forum.domain.CommentEntity;
 import com.example.forum.domain.Enum.EventType;
@@ -126,14 +127,32 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public CursorResponse<CommentDto> getListOfRootCommentAndCountReplyComment(Long postId, Long cursor, int size) {
+    public CursorResponse<CommentDto> getListOfRootCommentAndCountReplyComment(Long postId, String cursor, String sortBy , int size) {
+
+        Long currentUserId = securityService.getCurrentUser().getUserId();
 
         if (!postRepository.existsById(postId)) {
             throw new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND);
         }
 
         Pageable pageable = PageRequest.ofSize(size+1);
-        List<CommentProjection> rows = commentRepository.findRootCommentsWithReplyCountByPostId(postId, cursor, pageable);
+        List<CommentProjection> rows;
+
+        if("top".equalsIgnoreCase(sortBy)){
+            Long cursorId = null;
+            Long cursorScore = null;
+
+            if(cursor!= null && cursor.contains("_")){
+                String[] parts = cursor.split("_");
+                cursorScore = Long.parseLong(parts[0]);
+                cursorId = Long.parseLong(parts[1]);
+            }
+
+            rows = commentRepository.findTopRootComments(postId, currentUserId, cursorScore, cursorId, pageable);
+        } else {
+            Long cursorId = (cursor != null && !cursor.isEmpty()) ? Long.parseLong(cursor) : null;
+            rows = commentRepository.findNewestRootComments(postId, currentUserId, cursorId, pageable);
+        }
 
         boolean hasNext = rows.size() > size;
         if (hasNext) {
@@ -142,30 +161,43 @@ public class CommentServiceImpl implements CommentService {
 
         String nextCursor = null;
         if(!rows.isEmpty()){
-            nextCursor= rows.get(rows.size()-1).getCommentId().toString();
+            CommentProjection lastItem = rows.get(rows.size() - 1);
+            if("top".equalsIgnoreCase(sortBy)){
+                nextCursor = lastItem.getScore() + "_" + lastItem.getCommentId();
+            } else {
+                nextCursor = String.valueOf(lastItem.getCommentId());
+            }
         }
 
         List<CommentDto> data = rows.stream()
-                .map(row -> CommentDto.builder()
-                        .commentId(row.getCommentId())
-                        .commentContent(row.getCommentContent())
-                        .commentPath(row.getCommentPath())
-                        .isDeleted(row.getIsDeleted())
-                        .createdAt(row.getCreatedAt())
-                        .updatedAt(row.getUpdatedAt())
-                        .userInfor(new UserSummaryDto(
-                                row.getUserId(),
-                                row.getUsername(),
-                                row.getEmail(),
-                                row.getAvatarUrl()
-                        ))
-                        .postId(postId)
-                        .replyCount(row.getReplyCount())//reply count
-                        .build()
-                )
+                .map(this::mapProjectionToDto)
                 .toList();
 
         return new CursorResponse<>(data, nextCursor, hasNext);
+    }
+
+    private CommentDto mapProjectionToDto(CommentProjection row) {
+
+        return CommentDto.builder()
+                .commentId(row.getCommentId())
+                .commentContent(row.getCommentContent())
+                .commentPath(row.getCommentPath())
+                .isDeleted(row.getIsDeleted())
+                .createdAt(row.getCreatedAt())
+                .updatedAt(row.getUpdatedAt())
+                .userInfor(new UserSummaryDto(
+                        row.getUserId(),
+                        row.getUsername(),
+                        row.getEmail(),
+                        row.getAvatarUrl()
+                ))
+                .postId(row.getPostId())
+                .upvotes(row.getUpvotes())
+                .downvotes(row.getDownvotes())
+                .score(row.getScore())
+                .userVote(row.getUserVote())
+                .replyCount(row.getReplyCount())
+                .build();
     }
 
     @Override
@@ -220,7 +252,9 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public PagedResponse<CommentDto> getListOfCommentAndCountReplyComment(Long postId, Long parentId, int page, int size) {
+    public PagedResponse<CommentDto> getListOfChildCommentAndCountReplyComment(Long postId, Long parentId, int page, int size) {
+
+        Long currentUserId = securityService.getCurrentUser().getUserId();
 
         int pageIndex = (page > 0) ? page - 1 : 0;
         Pageable pageable = PageRequest.of(pageIndex, size);
@@ -229,26 +263,10 @@ public class CommentServiceImpl implements CommentService {
             throw new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND);
         }
 
-        Page<CommentProjection> pageCommentProjection = commentRepository.findCommentsWithReplyCountByPostId(postId, parentId, pageable);
+        Page<CommentProjection> pageCommentProjection = commentRepository.findChildCommentsWithReplyCountByPostId(postId, parentId, currentUserId, pageable);
 
         List<CommentDto> data= pageCommentProjection.getContent().stream()
-                .map(row -> CommentDto.builder()
-                        .commentId(row.getCommentId())
-                        .commentContent(row.getCommentContent())
-                        .commentPath(row.getCommentPath())
-                        .isDeleted(row.getIsDeleted())
-                        .createdAt(row.getCreatedAt())
-                        .updatedAt(row.getUpdatedAt())
-                        .userInfor(new UserSummaryDto(
-                                row.getUserId(),
-                                row.getUsername(),
-                                row.getEmail(),
-                                row.getAvatarUrl()
-                        ))
-                        .postId(postId)
-                        .replyCount(row.getReplyCount())
-                        .build()
-                )
+                .map(this::mapProjectionToDto)
                 .toList();
         return new PagedResponse<>(
                 data,

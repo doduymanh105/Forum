@@ -16,7 +16,11 @@ public interface CommentProjection {
     String getAvatarUrl();
 
     Long getPostId();
-    String getPostTitle();
+
+    Long getUpvotes();
+    Long getDownvotes();
+    Long getScore();
+    String getUserVote();
 
     Long getReplyCount();
 }
