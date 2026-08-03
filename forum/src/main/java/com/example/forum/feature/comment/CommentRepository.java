@@ -23,6 +23,7 @@ public interface CommentRepository extends JpaRepository<CommentEntity, Long> {
        c.comment_id AS commentId,
        c.comment_content AS commentContent,
        c.comment_path AS commentPath,
+       c.parent_id as parentId,
        c.is_deleted AS isDeleted,
        c.created_at AS createdAt,
        c.updated_at AS updatedAt,
@@ -64,6 +65,7 @@ public interface CommentRepository extends JpaRepository<CommentEntity, Long> {
        c.comment_id AS commentId,
        c.comment_content AS commentContent,
        c.comment_path AS commentPath,
+       c.parent_id as parentId,
        c.is_deleted AS isDeleted,
        c.created_at AS createdAt,
        c.updated_at AS updatedAt,
@@ -109,6 +111,7 @@ public interface CommentRepository extends JpaRepository<CommentEntity, Long> {
         c.comment_id AS commentId,
         c.comment_content AS commentContent,
         c.comment_path AS commentPath,
+        c.parent_id as parentId,
         c.is_deleted AS isDeleted,
         c.created_at AS createdAt,
         c.updated_at AS updatedAt,
@@ -158,4 +161,41 @@ public interface CommentRepository extends JpaRepository<CommentEntity, Long> {
     Long countByParentId(Long commentId);
 
     List<CommentEntity> findByParentIdOrderByCreatedAtAsc(Long parentId);
+
+
+    @Query(value = """
+    SELECT 
+       c.comment_id AS commentId,
+       c.comment_content AS commentContent,
+       c.comment_path AS commentPath,
+       c.parent_id as parentId,
+       c.is_deleted AS isDeleted,
+       c.created_at AS createdAt,
+       c.updated_at AS updatedAt,
+       c.post_id AS postId,
+       u.user_id AS userId,
+       u.user_name AS username,
+       u.avatar_url AS avatarUrl,
+       c.upvotes AS upvotes,
+       c.downvotes AS downvotes,
+       c.score AS score,
+       cv.vote_type AS userVote,
+       COUNT(DISTINCT r.comment_id) AS replyCount
+   FROM comments c
+   JOIN users u ON c.user_id = u.user_id
+   LEFT JOIN comments r
+          ON r.post_id = c.post_id
+         AND r.comment_path LIKE CONCAT(c.comment_path, c.comment_id, '/%')
+         AND r.comment_id <> c.comment_id
+   LEFT JOIN comment_votes cv
+         ON cv.comment_id = c.comment_id
+         AND cv.user_id = :currentUserId
+   WHERE c.comment_id IN :commentIds
+     AND c.is_deleted = false
+   GROUP BY c.comment_id, u.user_id, u.user_name, u.avatar_url, cv.vote_type
+""", nativeQuery = true)
+    List<CommentProjection> findCommentContextByIds(
+            @Param("commentIds") List<Long> commentIds,
+            @Param("currentUserId") Long currentUserId
+    );
 }

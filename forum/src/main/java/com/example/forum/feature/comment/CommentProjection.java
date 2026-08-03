@@ -6,6 +6,7 @@ public interface CommentProjection {
     Long getCommentId();
     String getCommentContent();
     String getCommentPath();
+    Long getParentId();
     Boolean getIsDeleted();
     LocalDateTime getCreatedAt();
     LocalDateTime getUpdatedAt();

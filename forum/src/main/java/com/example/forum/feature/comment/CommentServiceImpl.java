@@ -26,7 +26,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -88,8 +90,8 @@ public class CommentServiceImpl implements CommentService {
                     EventType.NEW_COMMENT,
                     currentUser,
                     preview,
-                    comment.getPostEntity().getPostId(),
-                    "POST"
+                    comment.getCommentId(),
+                    "COMMENT"
             );
             if (!postOwner.getUserId().equals(currentUser.getUserId())) {
                 notificationService.notifySpecificUser(postOwner, notificationEvent);
@@ -99,8 +101,8 @@ public class CommentServiceImpl implements CommentService {
                     EventType.NEW_REPLY,
                     currentUser,
                     preview,
-                    comment.getPostEntity().getPostId(),
-                    "POST"
+                    comment.getCommentId(),
+                    "COMMENT"
             );
             CommentEntity parentComment = commentRepository.findById(request.getParentId())
                     .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.COMMENT_NOT_FOUND));
@@ -182,6 +184,7 @@ public class CommentServiceImpl implements CommentService {
                 .commentId(row.getCommentId())
                 .commentContent(row.getCommentContent())
                 .commentPath(row.getCommentPath())
+                .parentId(row.getParentId())
                 .isDeleted(row.getIsDeleted())
                 .createdAt(row.getCreatedAt())
                 .updatedAt(row.getUpdatedAt())
@@ -312,6 +315,37 @@ public class CommentServiceImpl implements CommentService {
                 .toList();
     }
 
+    @Override
+    public CommentContextResponse getCommentContext(Long commentId) {
+        UserEntity user = securityService.getCurrentUser();
+
+        CommentEntity commentEntity = commentRepository.findById(commentId)
+                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.COMMENT_NOT_FOUND));
+
+        List<Long> relatedCommentIds= new ArrayList<>();
+        String commentPath= commentEntity.getCommentPath();
+        if(commentEntity.getParentId()!= null && !commentPath.equals("/")){
+            String[] path = commentEntity.getCommentPath().substring(1).split("/");
+            for(String s: path){
+                if (!s.isEmpty()) {
+                    relatedCommentIds.add(Long.parseLong(s));
+                }
+            }
+        }
+        relatedCommentIds.add(commentId);
+        List<CommentProjection> commentProjections = commentRepository.findCommentContextByIds(relatedCommentIds, user.getUserId());
+        List<CommentDto> commentDtos = commentProjections.stream()
+                .map(this::mapProjectionToDto)
+                .sorted(Comparator.comparingInt( c -> c.getCommentPath().length()))
+                .toList();
+
+        return CommentContextResponse.builder()
+                .postId(commentEntity.getPostEntity().getPostId())
+                .highlightCommentId(commentId)
+                .threadContext(commentDtos)
+                .build();
+    }
+
     private CommentResponseDto mapToCommentResponseDto(CommentEntity comment){
         if (comment == null) return null;
         String path = comment.getCommentPath();
@@ -383,7 +417,7 @@ public class CommentServiceImpl implements CommentService {
                 .commentId(comment.getCommentId())
                 .commentContent(comment.getCommentContent())
                 .commentPath(comment.getCommentPath())
-//                .likes(com)
+                .parentId(comment.getParentId())
                 .isDeleted(comment.getIsDeleted())
                 .createdAt(comment.getCreatedAt())
                 .updatedAt(comment.getUpdatedAt())

@@ -45,6 +45,7 @@ public class NotificationServiceImpl implements NotificationService {
             case NEW_REPLY -> "New reply from " + creatorName;
             case NEW_VOTE -> "New vote by " + creatorName;
             case NEW_FOLLOWER -> creatorName +" have followed you";
+            case NEW_COMMENT_VOTE -> creatorName + " have voted your comment";
         };
 
         String targetUrl = createTargetUrl(eventType, referenceId, creator.getUserId());
@@ -217,13 +218,16 @@ public class NotificationServiceImpl implements NotificationService {
         switch (eventType) {
             case NEW_POST:
             case NEW_VOTE:
-            case NEW_COMMENT:
-            case NEW_REPLY:
                 targetUrl = "/posts/" + referenceId;
                 break;
 
             case NEW_FOLLOWER:
                 targetUrl = "/users/" + creatorId;
+                break;
+            case NEW_COMMENT:
+            case NEW_REPLY:
+            case NEW_COMMENT_VOTE:
+                targetUrl="/comment/"+referenceId+"/context";
                 break;
 
             default:

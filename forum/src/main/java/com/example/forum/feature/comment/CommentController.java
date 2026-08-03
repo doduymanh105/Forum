@@ -1,6 +1,7 @@
 package com.example.forum.feature.comment;
 
 
+import com.example.forum.feature.comment.dto.CommentContextResponse;
 import com.example.forum.feature.comment.dto.CreateCommentRequest;
 import com.example.forum.feature.comment.dto.UpdateCommentRequest;
 import com.example.forum.common.dto.ApiResponse;
@@ -138,6 +139,17 @@ public class CommentController {
                         "Permanently deleted comment",
                         null
                 )
+        );
+    }
+
+    @GetMapping("/{commentId}/context")
+    public ResponseEntity<?> getCommentContext(
+            @PathVariable("commentId") Long commentId
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse
+                        .success("Comment's context get",
+                                commentService.getCommentContext(commentId))
         );
     }
 

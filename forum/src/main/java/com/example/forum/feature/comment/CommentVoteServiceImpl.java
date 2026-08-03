@@ -5,9 +5,12 @@ import com.example.forum.common.utils.SecurityUtils;
 import com.example.forum.core.exception.ResourceNotFoundException;
 import com.example.forum.domain.CommentEntity;
 import com.example.forum.domain.CommentVote;
+import com.example.forum.domain.Enum.EventType;
 import com.example.forum.domain.Enum.VoteType;
+import com.example.forum.domain.NotificationEvent;
 import com.example.forum.domain.UserEntity;
 import com.example.forum.feature.comment.dto.CommentVoteResponse;
+import com.example.forum.feature.notification.NotificationService;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,7 @@ public class CommentVoteServiceImpl implements CommentVoteService{
 
     private final SecurityUtils securityUtils;
     private final EntityManager entityManager;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -55,6 +59,14 @@ public class CommentVoteServiceImpl implements CommentVoteService{
                     .build();
             commentVoteRepository.save(newVote);
             finalVote = requestVoteType;
+            NotificationEvent voteCommentEvent = notificationService.createEvent(
+                    EventType.NEW_COMMENT_VOTE,
+                    user,
+                    null,
+                    commentEntity.getCommentId(),
+                    "COMMENT"
+            );
+            notificationService.notifySpecificUser(commentEntity.getUserEntity(), voteCommentEvent);
         }
 
         commentVoteRepository.flush();

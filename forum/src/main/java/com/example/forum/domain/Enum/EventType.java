@@ -5,5 +5,6 @@ public enum EventType {
     NEW_COMMENT,
     NEW_REPLY,
     NEW_VOTE,
-    NEW_FOLLOWER
+    NEW_FOLLOWER,
+    NEW_COMMENT_VOTE
 }

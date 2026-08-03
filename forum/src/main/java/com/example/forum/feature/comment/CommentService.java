@@ -1,10 +1,7 @@
 package com.example.forum.feature.comment;
 
 import com.example.forum.common.dto.CursorResponse;
-import com.example.forum.feature.comment.dto.CreateCommentRequest;
-import com.example.forum.feature.comment.dto.UpdateCommentRequest;
-import com.example.forum.feature.comment.dto.CommentDto;
-import com.example.forum.feature.comment.dto.CommentResponseDto;
+import com.example.forum.feature.comment.dto.*;
 import com.example.forum.common.dto.PagedResponse;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -35,4 +32,6 @@ public interface CommentService {
     PagedResponse<CommentResponseDto> getTopLevelComments(Long postId, Pageable pageable);
 
     List<CommentResponseDto> getReplies(Long parentId);
+
+    CommentContextResponse getCommentContext(Long commentId);
 }

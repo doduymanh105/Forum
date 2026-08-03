@@ -16,7 +16,7 @@ public class CommentDto {
     private Long commentId;
     private String commentContent;
     private String commentPath;
-//    private Integer likes;
+    private Long parentId;
     private Boolean isDeleted;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
