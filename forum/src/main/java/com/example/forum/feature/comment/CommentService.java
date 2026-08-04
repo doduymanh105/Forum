@@ -10,9 +10,7 @@ import java.util.List;
 
 public interface CommentService {
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
-    CommentResponseDto createComment(Long postId, CreateCommentRequest request);
-
-    List<CommentDto> getListOfCommentByPath(Long postId,String path);
+    CommentDto createComment(Long postId, CreateCommentRequest request);
 
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     CursorResponse<CommentDto> getListOfRootCommentAndCountReplyComment(Long postId, String cursor, String sortBy, int size);
@@ -28,10 +26,6 @@ public interface CommentService {
 
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     PagedResponse<CommentDto> getListOfChildCommentAndCountReplyComment(Long postId, Long parentId, int page, int size);
-
-    PagedResponse<CommentResponseDto> getTopLevelComments(Long postId, Pageable pageable);
-
-    List<CommentResponseDto> getReplies(Long parentId);
 
     CommentContextResponse getCommentContext(Long commentId);
 }

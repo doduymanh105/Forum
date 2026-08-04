@@ -1,7 +1,6 @@
 package com.example.forum.feature.comment;
 
 
-import com.example.forum.feature.comment.dto.CommentContextResponse;
 import com.example.forum.feature.comment.dto.CreateCommentRequest;
 import com.example.forum.feature.comment.dto.UpdateCommentRequest;
 import com.example.forum.common.dto.ApiResponse;
@@ -12,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-//@CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/forum/post/comment")
 public class CommentController {
 
@@ -59,49 +57,6 @@ public class CommentController {
                 )
         );
     }
-
-//    @GetMapping("/getPaginated")
-//    public ResponseEntity<?> getCommentsPaginated(
-//            @RequestParam Long postId, // Nhận postId
-//
-//            // Spring Boot tự động nhận 'page', 'size', và 'sort'
-//            // và gom chúng vào một đối tượng 'Pageable'
-//            @PageableDefault(
-//                    size = 4,
-//                    sort = "createdAt",
-//                    direction = Sort.Direction.DESC
-//            ) Pageable pageable
-//    ) {
-//        return ResponseEntity.ok(
-//                ApiResponse.success(
-//                        "Get comments successfully",
-//                        commentService.getTopLevelComments(postId, pageable)
-//                )
-//        );
-//    }
-
-//    @GetMapping("/getReplies/{parentId}")
-//    public ResponseEntity<?> getReplies(@PathVariable Long parentId) {
-//        return ResponseEntity.ok(
-//                ApiResponse.success(
-//                        "Replies fetched successfully",
-//                        commentService.getReplies(parentId)
-//                )
-//        );
-//    }
-//    @GetMapping("getCommentByPath")
-//    ResponseEntity<?> getCommentByPath(
-//            @RequestParam Long postId,
-//            @RequestParam String path
-//    ){
-//        return ResponseEntity.ok(
-//                ApiResponse.success(
-//                        "get successfully",
-//                        commentService.getListOfCommentByPath(postId, path)
-//                )
-//
-//        );
-//    }
 
     @PatchMapping("/{commentId}/update")
     ResponseEntity<?> updateComment (

@@ -31,4 +31,6 @@ public class CommentDto {
     private String userVote;
 
     private Long replyCount;
+
+    private Integer depth;
 }

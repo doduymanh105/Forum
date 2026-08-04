@@ -43,7 +43,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
-    public CommentResponseDto createComment(Long postId, CreateCommentRequest request) {
+    public CommentDto createComment(Long postId, CreateCommentRequest request) {
 
         PostEntity post= postRepository.findByPostId(postId)
                 .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));
@@ -116,16 +116,7 @@ public class CommentServiceImpl implements CommentService {
 
         postRepository.incrementCommentCount(postId);
 
-        return mapToCommentResponseDto(comment);
-    }
-
-    @Override
-    public List<CommentDto> getListOfCommentByPath(Long postId, String path) {
-        List<CommentEntity> comments = commentRepository.findByPostIdAndPathLike(postId, path);
-
-        return comments.stream()
-                .map(this::mapToCommentDto)
-                .toList();
+        return mapToCommentDto(comment);
     }
 
     @Override
@@ -283,39 +274,6 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public PagedResponse<CommentResponseDto> getTopLevelComments(Long postId, Pageable pageable) {
-        PostEntity post = postRepository.findByPostId(postId).orElseThrow(()-> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));
-        Page<CommentEntity> commentPage = commentRepository
-                .findByPostEntity_PostIdAndParentIdIsNull(postId, pageable);
-
-
-        Page<CommentResponseDto> dtoPage = commentPage.map(this::mapToCommentResponseDto);
-
-        return new PagedResponse<>(
-                dtoPage.getContent(),      // List<CommentResponseDto>
-                dtoPage.getNumber(),       // Số trang hiện tại
-                dtoPage.getSize(),         // Kích thước trang
-                dtoPage.getTotalElements(),// Tổng số comment (cấp 1)
-                dtoPage.getTotalPages(),   // Tổng số trang
-                dtoPage.isLast()           // Trang cuối?
-        );
-    }
-
-
-    @Override
-    public List<CommentResponseDto> getReplies(Long parentId) {
-        if (!commentRepository.existsById(parentId)) {
-            throw new ResourceNotFoundException(MessageConstants.PARENT_COMMENT_NOT_FOUND);
-        }
-
-        List<CommentEntity> replies = commentRepository.findByParentIdOrderByCreatedAtAsc(parentId);
-
-        return replies.stream()
-                .map(this::mapToCommentResponseDto)
-                .toList();
-    }
-
-    @Override
     public CommentContextResponse getCommentContext(Long commentId) {
         UserEntity user = securityService.getCurrentUser();
 
@@ -345,72 +303,6 @@ public class CommentServiceImpl implements CommentService {
                 .threadContext(commentDtos)
                 .build();
     }
-
-    private CommentResponseDto mapToCommentResponseDto(CommentEntity comment){
-        if (comment == null) return null;
-        String path = comment.getCommentPath();
-        String parentPath = null;
-        int depth = 0;
-
-        if (path != null && !path.isEmpty()) {
-            // depth = số lượng dấu '/'
-            depth = StringUtils.countMatches(path, "/");
-
-            // Nếu depth > 1 (ví dụ: "/123/"), parentPath là null
-            // Nếu depth > 2 (ví dụ: "/123/456/"), parentPath là "/123/"
-            if (depth > 1) {
-                // Tìm vị trí dấu '/' thứ 2 từ cuối lên
-                int lastSlash = path.lastIndexOf('/', path.length() - 2);
-                if (lastSlash >= 0) {
-                    parentPath = path.substring(0, lastSlash + 1);
-                }
-            }
-        }
-        UserEntity user = comment.getUserEntity();
-
-        return CommentResponseDto.builder()
-                .id(comment.getCommentId())
-                .postId(comment.getPostEntity().getPostId())
-                .ownerId(user != null ? user.getUserId() : null)
-
-                .content(comment.getCommentContent())
-                .isArchived(comment.getIsDeleted())
-
-                .createdAt(comment.getCreatedAt() != null ? comment.getCreatedAt().atOffset(ZoneOffset.UTC) : null)
-                .updatedAt(comment.getUpdatedAt() != null ? comment.getUpdatedAt().atOffset(ZoneOffset.UTC) : null)
-
-                .path(path)
-                .depth(depth)
-                .parentPath(parentPath)
-                .childCommentCount(commentRepository.countByParentId(comment.getCommentId())) // Tạm thời set 0
-                .children(Collections.emptyList()) // Luôn trả về mảng rỗng
-
-                .upvote(0L)
-                .downvote(0L)
-                .userVoteType(null)
-
-                .owner(mapToOwnerCommentDto(user))
-                .build();
-    }
-
-    private CommentOwnerDto mapToOwnerCommentDto(UserEntity owner){
-        if (owner == null) return null;
-
-        return CommentOwnerDto.builder()
-                .id(owner.getUserId())
-                .name(owner.displayUsername())
-                .photo(owner.getAvatarUrl())
-
-                .createdAt(owner.getCreatedAt() != null ? owner.getCreatedAt().atOffset(ZoneOffset.UTC) : null)
-
-                .slug(owner.getSlug())
-                .point(null)
-                .bio(owner.getBio())
-                .build();
-    }
-
-
-
 
     private CommentDto mapToCommentDto(CommentEntity comment){
         return CommentDto.builder()
