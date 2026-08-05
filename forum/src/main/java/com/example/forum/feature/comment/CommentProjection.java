@@ -24,5 +24,7 @@ public interface CommentProjection {
     String getUserVote();
 
     Long getReplyCount();
+
+    String getReplyToUsername();
 }
 

@@ -118,7 +118,8 @@ public interface CommentRepository extends JpaRepository<CommentEntity, Long> {
             c.downvotes AS downvotes,
             c.score AS score,
             cv.vote_type AS userVote,
-            COUNT(DISTINCT r.comment_id) AS replyCount
+            COUNT(DISTINCT r.comment_id) AS replyCount,
+            parent_u.user_name AS replyToUsername
           FROM comments c
           JOIN users u ON c.user_id = u.user_id
           LEFT JOIN comments r
@@ -128,10 +129,12 @@ public interface CommentRepository extends JpaRepository<CommentEntity, Long> {
           LEFT JOIN comment_votes cv
               ON cv.comment_id = c.comment_id
               AND cv.user_id = :currentUserId
+          LEFT JOIN comments parent_c ON c.parent_id = parent_c.comment_id
+          LEFT JOIN users parent_u ON parent_c.user_id = parent_u.user_id
           WHERE c.post_id = :postId
             AND c.parent_id = :parentId
             AND c.is_deleted = false
-          GROUP BY c.comment_id, u.user_id, u.user_name, u.email, u.avatar_url, cv.vote_type
+          GROUP BY c.comment_id, u.user_id, u.user_name, u.email, u.avatar_url, cv.vote_type, parent_u.user_name
           ORDER BY c.comment_id ASC;
     """, nativeQuery = true,
     countQuery = """

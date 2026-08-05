@@ -45,6 +45,10 @@ public class CommentServiceImpl implements CommentService {
     @Transactional
     public CommentDto createComment(Long postId, CreateCommentRequest request) {
 
+        // TODO: Production Image Enhancements
+        // 1. URL Validation: Ensure imageUrl starts with our trusted domain (e.g., https://duymanhdo.id.vn/).
+        // 2. Orphaned Images Cleanup: Add a @Scheduled job to delete uploaded files that are not linked in the 'comments' table.
+
         PostEntity post= postRepository.findByPostId(postId)
                 .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));
 
@@ -171,6 +175,12 @@ public class CommentServiceImpl implements CommentService {
 
     private CommentDto mapProjectionToDto(CommentProjection row) {
 
+        int depth = 0;
+        String path = row.getCommentPath();
+        if (path != null && !path.isEmpty()) {
+            depth = StringUtils.countMatches(path, "/");
+        }
+
         return CommentDto.builder()
                 .commentId(row.getCommentId())
                 .commentContent(row.getCommentContent())
@@ -191,6 +201,8 @@ public class CommentServiceImpl implements CommentService {
                 .score(row.getScore())
                 .userVote(row.getUserVote())
                 .replyCount(row.getReplyCount())
+                .replyToUsername(row.getReplyToUsername())
+                .depth(depth)
                 .build();
     }
 
