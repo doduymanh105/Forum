@@ -11,81 +11,183 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CommentRepository extends JpaRepository<CommentEntity, Long> {
-    @Query(value = "SELECT * FROM comments where post_id=:postId AND comment_path LIKE :path order by created_at",
-    nativeQuery = true)
-    List<CommentEntity> findByPostIdAndPathLike(
+
+    @Query(value = """
+        SELECT
+           c.comment_id AS commentId,
+           c.comment_content AS commentContent,
+           c.comment_path AS commentPath,
+           c.parent_id as parentId,
+           c.is_deleted AS isDeleted,
+           c.created_at AS createdAt,
+           c.updated_at AS updatedAt,
+           c.post_id AS postId,
+           u.user_id AS userId,
+           u.user_name AS username,
+           u.email as email,
+           u.avatar_url AS avatarUrl,
+           c.upvotes AS upvotes,
+           c.downvotes AS downvotes,
+           c.score AS score,
+           cv.vote_type AS userVote,
+           COUNT(DISTINCT r.comment_id) AS replyCount
+       FROM comments c
+       JOIN users u ON c.user_id = u.user_id
+       LEFT JOIN comments r
+              ON r.post_id = c.post_id
+             AND r.comment_path LIKE CONCAT(c.comment_path, c.comment_id, '/%')
+             AND r.comment_id <> c.comment_id
+       LEFT JOIN comment_votes cv
+             ON cv.comment_id = c.comment_id
+             AND cv.user_id = :currentUserId
+       WHERE c.post_id = :postId
+         AND c.is_deleted = false
+         AND (c.parent_id IS NULL OR c.comment_path = '/')
+         AND (:cursor IS NULL OR c.comment_id < :cursor)
+       GROUP BY c.comment_id, u.user_id, u.user_name, u.email, u.avatar_url, cv.vote_type
+       ORDER BY c.comment_id DESC
+   """, nativeQuery = true)
+    List<CommentProjection> findNewestRootComments(
             @Param("postId") Long postId,
-            @Param("path") String path
+            @Param("currentUserId") Long currentUserId,
+            @Param("cursor") Long cursor,
+            Pageable pageable
     );
 
     @Query(value = """
-    SELECT\s
-       c.comment_id AS commentId,
-       c.comment_content AS commentContent,
-       c.comment_path AS commentPath,
-       c.is_deleted AS isDeleted,
-       c.created_at AS createdAt,
-       c.updated_at AS updatedAt,
-       c.post_id AS postId,
-       u.user_id AS userId,
-       u.user_name AS username,
-       u.avatar_url AS avatarUrl,
-       COUNT(r.comment_id) AS replyCount
-   FROM comments c
-   JOIN users u ON c.user_id = u.user_id
-   LEFT JOIN comments r\s
-          ON r.post_id = c.post_id
-         AND r.comment_path LIKE CONCAT(c.comment_path, c.comment_id, '/%')
-         AND r.comment_id <> c.comment_id
-   WHERE c.post_id = :postId
-     AND c.is_deleted = false
-   GROUP BY c.comment_id, c.comment_content, c.comment_path,\s
-            c.is_deleted, c.created_at, c.updated_at, c.post_id,
-            u.user_id, u.user_name, u.avatar_url
-   ORDER BY c.comment_path ASC;
-""", nativeQuery = true)
-    List<CommentProjection> findCommentsWithReplyCountByPostId(@Param("postId") Long postId);
+        SELECT
+           c.comment_id AS commentId,
+           c.comment_content AS commentContent,
+           c.comment_path AS commentPath,
+           c.parent_id as parentId,
+           c.is_deleted AS isDeleted,
+           c.created_at AS createdAt,
+           c.updated_at AS updatedAt,
+           c.post_id AS postId,
+           u.user_id AS userId,
+           u.user_name AS username,
+           u.email as email,
+           u.avatar_url AS avatarUrl,
+           c.upvotes AS upvotes,
+           c.downvotes AS downvotes,
+           c.score AS score,
+           cv.vote_type AS userVote,
+           COUNT(DISTINCT r.comment_id) AS replyCount
+       FROM comments c
+       JOIN users u ON c.user_id = u.user_id
+       LEFT JOIN comments r 
+              ON r.post_id = c.post_id
+             AND r.comment_path LIKE CONCAT(c.comment_path, c.comment_id, '/%')
+             AND r.comment_id <> c.comment_id
+       LEFT JOIN comment_votes cv 
+              ON cv.comment_id = c.comment_id AND cv.user_id = :currentUserId
+       WHERE c.post_id = :postId
+         AND c.is_deleted = false
+         AND (c.parent_id IS NULL OR c.comment_path = '/')
+         -- Logic Composite Cursor: 
+         -- Nhỏ hơn điểm cursorScore HOẶC (Bằng điểm cursorScore NHƯNG cũ hơn cursorId)
+         AND (:cursorScore IS NULL OR c.score < :cursorScore OR (c.score = :cursorScore AND c.comment_id < :cursorId))
+       GROUP BY c.comment_id, u.user_id, u.user_name, u.email, u.avatar_url, cv.vote_type
+       ORDER BY c.score DESC, c.comment_id DESC
+    """, nativeQuery = true)
+    List<CommentProjection> findTopRootComments(
+            @Param("postId") Long postId,
+            @Param("currentUserId") Long currentUserId,
+            @Param("cursorScore") Long cursorScore,
+            @Param("cursorId") Long cursorId,
+            Pageable pageable
+    );
 
     Optional<CommentEntity> findByCommentIdAndIsDeletedFalse(Long commentId);
 
     @Query(value = """
-    SELECT
-          c.comment_id AS commentId,
-          c.comment_content AS commentContent,
-          c.comment_path AS commentPath,
-          c.is_deleted AS isDeleted,
-          c.created_at AS createdAt,
-          c.updated_at AS updatedAt,
-          c.post_id AS postId,
-          u.user_id AS userId,
-          u.user_name AS username,
-          u.avatar_url AS avatarUrl,
-          COUNT(r.comment_id) AS replyCount
-      FROM comments c
-      JOIN users u ON c.user_id = u.user_id
-      LEFT JOIN comments r
-             ON r.post_id = c.post_id
-            AND r.comment_path LIKE CONCAT(c.comment_path, c.comment_id, '/%')
-            AND r.comment_id <> c.comment_id
-      WHERE c.post_id = :postId
-        AND c.comment_path like concat(:parentPath, :parentId ,'/')
-        AND c.is_deleted = false
-      GROUP BY c.comment_id, c.comment_content, c.comment_path,
-               c.is_deleted, c.created_at, c.updated_at, c.post_id,
-               u.user_id, u.user_name, u.avatar_url
-      ORDER BY c.comment_path ASC;
-""", nativeQuery = true)
-    List<CommentProjection> findCommentsWithReplyCountByPostId(
+        SELECT
+            c.comment_id AS commentId,
+            c.comment_content AS commentContent,
+            c.comment_path AS commentPath,
+            c.parent_id as parentId,
+            c.is_deleted AS isDeleted,
+            c.created_at AS createdAt,
+            c.updated_at AS updatedAt,
+            c.post_id AS postId,
+            u.user_id AS userId,
+            u.user_name AS username,
+            u.email as email,
+            u.avatar_url AS avatarUrl,
+            c.upvotes AS upvotes,
+            c.downvotes AS downvotes,
+            c.score AS score,
+            cv.vote_type AS userVote,
+            COUNT(DISTINCT r.comment_id) AS replyCount,
+            parent_u.user_name AS replyToUsername
+          FROM comments c
+          JOIN users u ON c.user_id = u.user_id
+          LEFT JOIN comments r
+                 ON r.post_id = c.post_id
+                AND r.comment_path LIKE CONCAT(c.comment_path, c.comment_id, '/%')
+                AND r.comment_id <> c.comment_id
+          LEFT JOIN comment_votes cv
+              ON cv.comment_id = c.comment_id
+              AND cv.user_id = :currentUserId
+          LEFT JOIN comments parent_c ON c.parent_id = parent_c.comment_id
+          LEFT JOIN users parent_u ON parent_c.user_id = parent_u.user_id
+          WHERE c.post_id = :postId
+            AND c.parent_id = :parentId
+            AND c.is_deleted = false
+          GROUP BY c.comment_id, u.user_id, u.user_name, u.email, u.avatar_url, cv.vote_type, parent_u.user_name
+          ORDER BY c.comment_id ASC;
+    """, nativeQuery = true,
+    countQuery = """
+            SELECT count(*)
+            FROM comments c
+            WHERE c.post_id = :postId
+              AND c.parent_id = :parentId
+              AND c.is_deleted = false
+            """)
+    Page<CommentProjection> findChildCommentsWithReplyCountByPostId(
             @Param("postId") Long postId,
-            @Param("parentPath") String parentPath,
-            @Param("parentId") Long parentId
+            @Param("parentId") Long parentId,
+            @Param("currentUserId") Long currentUserId,
+            Pageable pageable
     );
 
     Long countByPostEntity(PostEntity post);
 
-    Page<CommentEntity> findByPostEntity_PostIdAndParentIdIsNull(Long postId, Pageable pageable);
-
     Long countByParentId(Long commentId);
 
-    List<CommentEntity> findByParentIdOrderByCreatedAtAsc(Long parentId);
+    @Query(value = """
+       SELECT
+           c.comment_id AS commentId,
+           c.comment_content AS commentContent,
+           c.comment_path AS commentPath,
+           c.parent_id as parentId,
+           c.is_deleted AS isDeleted,
+           c.created_at AS createdAt,
+           c.updated_at AS updatedAt,
+           c.post_id AS postId,
+           u.user_id AS userId,
+           u.user_name AS username,
+           u.avatar_url AS avatarUrl,
+           c.upvotes AS upvotes,
+           c.downvotes AS downvotes,
+           c.score AS score,
+           cv.vote_type AS userVote,
+           COUNT(DISTINCT r.comment_id) AS replyCount
+       FROM comments c
+       JOIN users u ON c.user_id = u.user_id
+       LEFT JOIN comments r
+              ON r.post_id = c.post_id
+             AND r.comment_path LIKE CONCAT(c.comment_path, c.comment_id, '/%')
+             AND r.comment_id <> c.comment_id
+       LEFT JOIN comment_votes cv
+             ON cv.comment_id = c.comment_id
+             AND cv.user_id = :currentUserId
+       WHERE c.comment_id IN :commentIds
+         AND c.is_deleted = false
+       GROUP BY c.comment_id, u.user_id, u.user_name, u.avatar_url, cv.vote_type
+    """, nativeQuery = true)
+    List<CommentProjection> findCommentContextByIds(
+            @Param("commentIds") List<Long> commentIds,
+            @Param("currentUserId") Long currentUserId
+    );
 }

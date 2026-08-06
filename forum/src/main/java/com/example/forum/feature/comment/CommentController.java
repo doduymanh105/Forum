@@ -5,16 +5,12 @@ import com.example.forum.feature.comment.dto.CreateCommentRequest;
 import com.example.forum.feature.comment.dto.UpdateCommentRequest;
 import com.example.forum.common.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/forum/post/comment")
 public class CommentController {
 
@@ -32,71 +28,33 @@ public class CommentController {
                         commentService.createComment(postId,request)
                 ));
     }
-    @GetMapping("/getCommentCount")
-    ResponseEntity<?> getCommentWithReplyCount(
-            @RequestParam Long postId
+    @GetMapping("/{postId}/rootCommentWithCount")
+    ResponseEntity<?> getRootCommentWithReplyCount(
+            @PathVariable Long postId,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy
     ) {
         return ResponseEntity.ok(
                 ApiResponse.success(
-                "get successfully",
-                        commentService.getListOfCommentAndCountReplyComment(postId)
+                        "Get root comments successfully",
+                        commentService.getListOfRootCommentAndCountReplyComment(postId, cursor ,sortBy, size)
         ));
     }
     // for specific comment
-    @GetMapping("/{postId}/getCommentCount")
+    @GetMapping("/{postId}/{parentId}/replies")
     ResponseEntity<?> getCommentWithReplyCount(
             @PathVariable Long postId,
-            @RequestParam String parentPath,
-            @RequestParam Long parentId
+            @PathVariable Long parentId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+
     ) {
         return ResponseEntity.ok(
                 ApiResponse.success(
-                        "get successfully",
-                        commentService.getListOfCommentAndCountReplyComment(postId,parentPath,parentId)
+                        "Get child comments successfully",
+                        commentService.getListOfChildCommentAndCountReplyComment(postId,parentId, page, size)
                 )
-        );
-    }
-
-    @GetMapping("/getPaginated")
-    public ResponseEntity<?> getCommentsPaginated(
-            @RequestParam Long postId, // Nhận postId
-
-            // Spring Boot tự động nhận 'page', 'size', và 'sort'
-            // và gom chúng vào một đối tượng 'Pageable'
-            @PageableDefault(
-                    size = 4,
-                    sort = "createdAt",
-                    direction = Sort.Direction.DESC
-            ) Pageable pageable
-    ) {
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        "Get comments successfully",
-                        commentService.getTopLevelComments(postId, pageable)
-                )
-        );
-    }
-
-    @GetMapping("/getReplies/{parentId}")
-    public ResponseEntity<?> getReplies(@PathVariable Long parentId) {
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        "Replies fetched successfully",
-                        commentService.getReplies(parentId)
-                )
-        );
-    }
-    @GetMapping("getCommentByPath")
-    ResponseEntity<?> getCommentByPath(
-            @RequestParam Long postId,
-            @RequestParam String path
-    ){
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        "get successfully",
-                        commentService.getListOfCommentByPath(postId, path)
-                )
-
         );
     }
 
@@ -136,6 +94,17 @@ public class CommentController {
                         "Permanently deleted comment",
                         null
                 )
+        );
+    }
+
+    @GetMapping("/{commentId}/context")
+    public ResponseEntity<?> getCommentContext(
+            @PathVariable("commentId") Long commentId
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse
+                        .success("Comment's context get",
+                                commentService.getCommentContext(commentId))
         );
     }
 

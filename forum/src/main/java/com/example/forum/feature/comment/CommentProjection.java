@@ -6,6 +6,7 @@ public interface CommentProjection {
     Long getCommentId();
     String getCommentContent();
     String getCommentPath();
+    Long getParentId();
     Boolean getIsDeleted();
     LocalDateTime getCreatedAt();
     LocalDateTime getUpdatedAt();
@@ -16,8 +17,14 @@ public interface CommentProjection {
     String getAvatarUrl();
 
     Long getPostId();
-    String getPostTitle();
+
+    Long getUpvotes();
+    Long getDownvotes();
+    Long getScore();
+    String getUserVote();
 
     Long getReplyCount();
+
+    String getReplyToUsername();
 }
 

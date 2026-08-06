@@ -28,8 +28,18 @@ public class CommentEntity {
 
     private Long parentId;
 
-//    @Column()
-//    private Integer likes;
+//    if not this annotation , builder will assign null value
+    @Builder.Default
+    @Column(name = "upvotes", nullable = false, columnDefinition = "bigint default 0")
+    private Long upvotes = 0L;
+
+    @Builder.Default
+    @Column(name = "downvotes", nullable = false, columnDefinition = "bigint default 0")
+    private Long downvotes = 0L;
+
+    @Builder.Default
+    @Column(name = "score", nullable = false, columnDefinition = "bigint default 0")
+    private Long score = 0L;
 
     @Column(name = "comment_content", columnDefinition = "TEXT")
     private String commentContent;

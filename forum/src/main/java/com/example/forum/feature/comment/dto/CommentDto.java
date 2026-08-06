@@ -16,20 +16,23 @@ public class CommentDto {
     private Long commentId;
     private String commentContent;
     private String commentPath;
-//    private Integer likes;
+    private Long parentId;
     private Boolean isDeleted;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     private UserSummaryDto userInfor;
-    private PostInfo post;
 
-    @Data
-    @AllArgsConstructor
-    public static class PostInfo {
-        private Long postId;
-        private String postTitle;
-    }
+    private Long postId;
+
+    private Long upvotes;
+    private Long downvotes;
+    private Long score;
+    private String userVote;
 
     private Long replyCount;
+
+    private Integer depth;
+
+    private String replyToUsername;
 }
