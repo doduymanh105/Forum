@@ -29,6 +29,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -254,6 +256,7 @@ public class PostServiceImpl implements PostService {
 
 
     @Override
+    @Cacheable(value = "postDetail", key = "#postId")
     public PostResponseDto getPost(Long postId) {
         UserEntity currentUser = securityService.getCurrentUser();
         PostEntity post= postRepo.findById(postId)
@@ -424,6 +427,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @CacheEvict(value = "postDetail", key = "#postId")
     public PostResponseDto updatePost(Long postId, UpdatePostRequest request) {
 
         PostEntity post = postRepo.findByPostId(postId)
@@ -460,6 +464,7 @@ public class PostServiceImpl implements PostService {
 
 
     @Override
+    @CacheEvict(value = "postDetail", key = "#postId")
     public void softDeletePost(Long id) {
         PostEntity post= postRepo.findByPostId(id)
                 .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));
