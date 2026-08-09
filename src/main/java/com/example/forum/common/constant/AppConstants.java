@@ -47,6 +47,10 @@ public final class AppConstants {
     // avatarURl
     public static final String DEFAULT_AVATAR_URL ="https://cdn-icons-png.flaticon.com/512/9815/9815472.png";
 
+    public static final int DEFAULT_LIMIT = 10;
+    public static final int DEFAULT_DAYS = 300;
+    public static final int TAG_JOB_SCHEDULE = 1800000;
+
 
 
 }
