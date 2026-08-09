@@ -355,8 +355,8 @@ public class PostServiceImpl implements PostService {
     private final ObjectMapper objectMapper;
 
     @Override
-    public CursorResponse<PostResponseDto> getNewsfeed (String cursor, int size){
-        UserEntity currentUser = securityService.getCurrentUser();
+    @Cacheable(value = "newsfeed", key = "#currentUser != null ? #currentUser.userId : 0L", condition = "#cursor == null")
+    public CursorResponse<PostResponseDto> getNewsfeed (String cursor,UserEntity currentUser, int size){
 
         Long currentUserId = (currentUser != null) ? currentUser.getUserId() : 0L;
 
@@ -464,7 +464,7 @@ public class PostServiceImpl implements PostService {
 
 
     @Override
-    @CacheEvict(value = "postDetail", key = "#postId")
+    @CacheEvict(value = "postDetail", key = "#id")
     public void softDeletePost(Long id) {
         PostEntity post= postRepo.findByPostId(id)
                 .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));

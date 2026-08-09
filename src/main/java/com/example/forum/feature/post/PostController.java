@@ -1,6 +1,7 @@
 package com.example.forum.feature.post;
 
 import com.example.forum.common.dto.CursorResponse;
+import com.example.forum.common.utils.SecurityUtils;
 import com.example.forum.feature.post.dto.CreatePostRequest;
 import com.example.forum.feature.post.dto.PostFilterRequest;
 import com.example.forum.feature.post.dto.UpdatePostRequest;
@@ -27,6 +28,7 @@ import java.util.List;
 public class PostController {
 
     private final PostService postService;
+    private final SecurityUtils securityUtils;
 
     @PostMapping(value ="/create")
     public ResponseEntity<?> createPost (
@@ -91,7 +93,7 @@ public class PostController {
         return ResponseEntity.ok(
                 ApiResponse.success(
                         "get newsfeed",
-                        postService.getNewsfeed(cursor, size)
+                        postService.getNewsfeed(cursor,securityUtils.getCurrentUser(), size)
                 )
         );
     }
