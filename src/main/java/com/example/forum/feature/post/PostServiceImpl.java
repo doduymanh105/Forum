@@ -349,38 +349,11 @@ public class PostServiceImpl implements PostService {
         );
     }
 
-    private static final String CACHE_PREFIX = "newsfeed:user:";
-    private static final long TTL_MINUTES = 3;
-    private final CacheService cacheService;
-    private final ObjectMapper objectMapper;
-
     @Override
     @Cacheable(value = "newsfeed", key = "#currentUser != null ? #currentUser.userId : 0L", condition = "#cursor == null")
     public CursorResponse<PostResponseDto> getNewsfeed (String cursor,UserEntity currentUser, int size){
-
         Long currentUserId = (currentUser != null) ? currentUser.getUserId() : 0L;
 
-        if(cursor== null){
-            String cacheKey = CACHE_PREFIX + currentUserId;
-
-            String cachedJson =(String) cacheService.get(cacheKey);
-            if(cachedJson != null){
-                try{
-                    return objectMapper.readValue(cachedJson, new TypeReference<CursorResponse<PostResponseDto>>() {});
-                } catch (JsonProcessingException e) {
-                    log.error("Failed to parse cache JSON for key: {}", cacheKey, e);
-                }
-            }
-            CursorResponse<PostResponseDto> dbResult = getNewsfeedFromDb(currentUserId, null, size, currentUser);
-
-            try{
-                String jsonToCache = objectMapper.writeValueAsString(dbResult);
-                cacheService.set(cacheKey, jsonToCache, TTL_MINUTES, TimeUnit.MINUTES);
-            } catch (JsonProcessingException e) {
-                log.error("Failed to serialize newsfeed to JSON", e);
-            }
-            return dbResult;
-        }
         return getNewsfeedFromDb(currentUserId, cursor, size, currentUser);
     }
 
