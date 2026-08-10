@@ -39,7 +39,7 @@ public interface PostService {
 
     PagedResponse<PostResponseDto> searchPost (PostFilterRequest request, int page, int size);
 
-    CursorResponse<PostResponseDto> getNewsfeed (String cursor, int size);
+    CursorResponse<PostResponseDto> getNewsfeed (String cursor,UserEntity currentUser, int size);
 
     CursorResponse<PostResponseDto> getNewsfeedFromDb(Long userId, String cursor, int size, UserEntity user);
 

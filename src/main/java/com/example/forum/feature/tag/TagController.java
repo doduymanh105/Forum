@@ -1,5 +1,6 @@
 package com.example.forum.feature.tag;
 
+import com.example.forum.common.dto.ApiResponse;
 import com.example.forum.domain.Tag; // Import Entity
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,5 +23,14 @@ public class TagController {
     public ResponseEntity<List<Tag>> getAllTags() { // <-- Sửa ở đây
         List<Tag> tags = tagService.getAllTags();
         return ResponseEntity.ok(tags);
+    }
+
+    @GetMapping("/trendingTags")
+    public ResponseEntity<?> getTrendingTags(){
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "Trending tags get",
+                tagService.getTrendingTag())
+        );
     }
 }

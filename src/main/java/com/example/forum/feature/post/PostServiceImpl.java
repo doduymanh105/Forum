@@ -29,6 +29,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -254,6 +256,7 @@ public class PostServiceImpl implements PostService {
 
 
     @Override
+    @Cacheable(value = "postDetail", key = "#postId")
     public PostResponseDto getPost(Long postId) {
         UserEntity currentUser = securityService.getCurrentUser();
         PostEntity post= postRepo.findById(postId)
@@ -346,38 +349,11 @@ public class PostServiceImpl implements PostService {
         );
     }
 
-    private static final String CACHE_PREFIX = "newsfeed:user:";
-    private static final long TTL_MINUTES = 3;
-    private final CacheService cacheService;
-    private final ObjectMapper objectMapper;
-
     @Override
-    public CursorResponse<PostResponseDto> getNewsfeed (String cursor, int size){
-        UserEntity currentUser = securityService.getCurrentUser();
-
+    @Cacheable(value = "newsfeed", key = "#currentUser != null ? #currentUser.userId : 0L", condition = "#cursor == null")
+    public CursorResponse<PostResponseDto> getNewsfeed (String cursor,UserEntity currentUser, int size){
         Long currentUserId = (currentUser != null) ? currentUser.getUserId() : 0L;
 
-        if(cursor== null){
-            String cacheKey = CACHE_PREFIX + currentUserId;
-
-            String cachedJson =(String) cacheService.get(cacheKey);
-            if(cachedJson != null){
-                try{
-                    return objectMapper.readValue(cachedJson, new TypeReference<CursorResponse<PostResponseDto>>() {});
-                } catch (JsonProcessingException e) {
-                    log.error("Failed to parse cache JSON for key: {}", cacheKey, e);
-                }
-            }
-            CursorResponse<PostResponseDto> dbResult = getNewsfeedFromDb(currentUserId, null, size, currentUser);
-
-            try{
-                String jsonToCache = objectMapper.writeValueAsString(dbResult);
-                cacheService.set(cacheKey, jsonToCache, TTL_MINUTES, TimeUnit.MINUTES);
-            } catch (JsonProcessingException e) {
-                log.error("Failed to serialize newsfeed to JSON", e);
-            }
-            return dbResult;
-        }
         return getNewsfeedFromDb(currentUserId, cursor, size, currentUser);
     }
 
@@ -424,6 +400,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @CacheEvict(value = "postDetail", key = "#postId")
     public PostResponseDto updatePost(Long postId, UpdatePostRequest request) {
 
         PostEntity post = postRepo.findByPostId(postId)
@@ -460,6 +437,7 @@ public class PostServiceImpl implements PostService {
 
 
     @Override
+    @CacheEvict(value = "postDetail", key = "#id")
     public void softDeletePost(Long id) {
         PostEntity post= postRepo.findByPostId(id)
                 .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));
