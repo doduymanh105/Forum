@@ -159,4 +159,17 @@ public class GlobalExceptionHandler {
                         ));
     }
 
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ApiResponse<?>> handleRateLimitExceeded(
+            RateLimitExceededException ex
+    ){
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("X-Rate-Limit-Retry-After-Seconds", String.valueOf(ex.getWaitForRefillSeconds()))
+                .body(
+                        ApiResponse.error(
+                                HttpStatus.TOO_MANY_REQUESTS.value(),
+                                ex.getMessage())
+                );
+    }
+
 }
