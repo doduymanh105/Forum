@@ -1,6 +1,7 @@
 package com.example.forum.feature.comment;
 
 import com.example.forum.common.dto.ApiResponse;
+import com.example.forum.core.annotation.RateLimit;
 import com.example.forum.feature.comment.dto.VoteCommentRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,7 @@ public class CommentVoteController {
 
     private final CommentVoteService commentVoteService;
 
+    @RateLimit(capacity = 20, time = 1)
     @PostMapping("/{commentId}/vote")
     public ResponseEntity<?> voteComment(
             @PathVariable Long commentId,

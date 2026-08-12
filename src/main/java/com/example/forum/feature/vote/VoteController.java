@@ -1,6 +1,7 @@
 package com.example.forum.feature.vote;
 
 import com.example.forum.common.dto.ApiResponse;
+import com.example.forum.core.annotation.RateLimit;
 import com.example.forum.domain.Enum.VoteType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 public class VoteController {
     private final VoteService voteService;
 
+    @RateLimit(capacity = 20, time = 1)
     @PostMapping("/{post_id}/vote")
     ResponseEntity<?> vote (
             @PathVariable Long post_id,
@@ -23,6 +25,7 @@ public class VoteController {
         ));
     }
 
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping("/{post_id}/vote")
     ResponseEntity<?> getVoteByVoteType (
             @PathVariable Long post_id,

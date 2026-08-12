@@ -1,6 +1,7 @@
 package com.example.forum.feature.collection;
 
 import com.example.forum.common.dto.ApiResponse;
+import com.example.forum.core.annotation.RateLimit;
 import com.example.forum.feature.collection.dto.CreateCollectionRequest;
 import com.example.forum.feature.collection.dto.UpdateCollectionRequest;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ public class CollectionController {
 
     private final CollectionService collectionService;
 
+    @RateLimit(capacity = 10, time = 1)
     @PostMapping("/collections")
     public ResponseEntity<?> createCollection(
             @RequestBody CreateCollectionRequest request
@@ -24,7 +26,7 @@ public class CollectionController {
                 , collectionService.createCollection(request))
         );
     }
-
+    @RateLimit(capacity = 20, time = 1)
     @PatchMapping("/collections")
     public ResponseEntity<?> updateCollection(
             @RequestBody UpdateCollectionRequest request
@@ -36,6 +38,7 @@ public class CollectionController {
         );
     }
 
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping("/collections")
     public ResponseEntity<?> getCollections(){
         return ResponseEntity.ok(
@@ -45,6 +48,7 @@ public class CollectionController {
         );
     }
 
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping("/collections/{id}")
     public ResponseEntity<?> getCollectionById(
            @PathVariable(name = "id") Long collectionId,
@@ -57,6 +61,7 @@ public class CollectionController {
         );
     }
 
+    @RateLimit(capacity = 20, time = 1)
     @DeleteMapping("/collections")
     public ResponseEntity<?> softDeleteCollection(
             @RequestParam Long id
@@ -68,6 +73,7 @@ public class CollectionController {
                 ));
     }
 
+    @RateLimit(capacity = 20, time = 1)
     @PostMapping("/collections/saved")
     public ResponseEntity<?> addPostToCollection(
             @RequestParam Long collectionId,
@@ -80,6 +86,7 @@ public class CollectionController {
                 ));
     }
 
+    @RateLimit(capacity = 20, time = 1)
     @DeleteMapping("/collections/saved")
     public ResponseEntity<?> removePostFromCollection(
             @RequestParam Long collectionId,
@@ -92,6 +99,7 @@ public class CollectionController {
                 ));
     }
 
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping("/collections/saved-search")
     public ResponseEntity<?> searchPost(
             @RequestParam(required = false) String title

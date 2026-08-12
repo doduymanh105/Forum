@@ -22,12 +22,13 @@ public class TagController {
     private final TagService tagService;
 
     @GetMapping
-    @RateLimit(capacity = 3, time = 1, unit = ChronoUnit.MINUTES)
+    @RateLimit(capacity = 100, time = 1)
     public ResponseEntity<List<Tag>> getAllTags() {
         List<Tag> tags = tagService.getAllTags();
         return ResponseEntity.ok(tags);
     }
 
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping("/trendingTags")
     public ResponseEntity<?> getTrendingTags(){
         return ResponseEntity.ok(

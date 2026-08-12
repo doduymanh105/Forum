@@ -2,6 +2,7 @@ package com.example.forum.feature.post;
 
 import com.example.forum.common.dto.CursorResponse;
 import com.example.forum.common.utils.SecurityUtils;
+import com.example.forum.core.annotation.RateLimit;
 import com.example.forum.feature.post.dto.CreatePostRequest;
 import com.example.forum.feature.post.dto.PostFilterRequest;
 import com.example.forum.feature.post.dto.UpdatePostRequest;
@@ -30,6 +31,7 @@ public class PostController {
     private final PostService postService;
     private final SecurityUtils securityUtils;
 
+    @RateLimit(capacity = 5, time = 1)
     @PostMapping(value ="/create")
     public ResponseEntity<?> createPost (
             @Valid @RequestBody CreatePostRequest request
@@ -44,6 +46,7 @@ public class PostController {
 
     }
 
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping("/{postId}")
     public ResponseEntity<?> getPostById(@PathVariable Long postId) {
         return ResponseEntity.ok(
@@ -54,6 +57,7 @@ public class PostController {
         );
     }
 
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping()
     public ResponseEntity<?> getPostByOwner(
             @RequestParam Long userId,
@@ -68,6 +72,7 @@ public class PostController {
         );
     }
 
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping("/all")
     public ResponseEntity<?> getPosts(
             @RequestParam(defaultValue = "0") int page,
@@ -85,6 +90,7 @@ public class PostController {
         );
     }
 
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping("/newsfeed")
     public ResponseEntity<?> getNewFeed(
             @RequestParam(defaultValue = "10") int size,
@@ -98,6 +104,7 @@ public class PostController {
         );
     }
 
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping("/search")
     public ResponseEntity<?> searchPosts(
             @ModelAttribute PostFilterRequest request,
@@ -111,6 +118,7 @@ public class PostController {
         );
     }
 
+    @RateLimit(capacity = 20, time = 1)
     @PatchMapping("/{id}/update")
     public ResponseEntity<?> updatePost(
             @PathVariable Long id,
@@ -122,6 +130,7 @@ public class PostController {
         ));
     }
 
+    @RateLimit(capacity = 20, time = 1)
     @PatchMapping("/{id}/soft-delete")
     public ResponseEntity<?> softDeletePost(@PathVariable Long id){
         postService.softDeletePost(id);
@@ -131,6 +140,7 @@ public class PostController {
         ));
     }
 
+    @RateLimit(capacity = 20, time = 1)
     @DeleteMapping("/{id}")
     public ResponseEntity<?> hardDeletePost(@PathVariable Long id){
         postService.hardDeletePost(id);
@@ -142,6 +152,7 @@ public class PostController {
         );
     }
 
+    @RateLimit(capacity = 20, time = 1)
     @PostMapping(value = "/{postId}/media", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> addMediaToPost(
             @PathVariable Long postId,
@@ -154,6 +165,7 @@ public class PostController {
         );
     }
 
+    @RateLimit(capacity = 20, time = 1)
     @DeleteMapping("/{postId}/media/{mediaId}")
     public ResponseEntity<?> removeMediaFromPost(
             @PathVariable Long postId,

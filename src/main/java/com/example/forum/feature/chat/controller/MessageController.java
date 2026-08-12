@@ -2,6 +2,7 @@ package com.example.forum.feature.chat.controller;
 
 
 import com.example.forum.common.dto.ApiResponse;
+import com.example.forum.core.annotation.RateLimit;
 import com.example.forum.feature.chat.service.MessageService;
 import com.example.forum.feature.chat.dto.chatRequestDto.EditMessageRequest;
 import com.example.forum.feature.chat.dto.chatRequestDto.MessageRequest;
@@ -20,6 +21,7 @@ public class MessageController {
 
     private final MessageService messageService;
 
+    @RateLimit(capacity = 30, time = 1)
     @PostMapping("/{chatId}/messages")
     public ResponseEntity<MessageResponse> sendMessage(
             @PathVariable Long chatId,
@@ -43,6 +45,7 @@ public class MessageController {
         );
     }
 
+    @RateLimit(capacity = 20, time = 1)
     @PatchMapping("/messages/{id}")
     public ResponseEntity<ApiResponse<MessageResponse>> editMessage(
             @RequestBody EditMessageRequest request,
@@ -54,6 +57,8 @@ public class MessageController {
                 , messageService.editMessage(request, id))
         );
     }
+
+    @RateLimit(capacity = 20, time = 1)
     @DeleteMapping("/messages/{id}")
     public ResponseEntity<ApiResponse<MessageResponse>> deleteMessage(
             @RequestBody EditMessageRequest request,
