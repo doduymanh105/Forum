@@ -1,6 +1,7 @@
 package com.example.forum.feature.chat.controller;
 
 import com.example.forum.common.dto.ApiResponse;
+import com.example.forum.core.annotation.RateLimit;
 import com.example.forum.feature.chat.service.ChatService;
 import com.example.forum.feature.chat.dto.chatRequestDto.CreateDirectChatRequest;
 import com.example.forum.feature.chat.dto.chatRequestDto.CreateGroupChatRequest;
@@ -24,6 +25,7 @@ public class ChatController {
     private final ChatService chatService;
     private final WebsocketNotificationService chatNotification;
 
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping()
     public ResponseEntity<ApiResponse<?>> getChats(
             @RequestParam(defaultValue = "1") int page,
@@ -38,6 +40,7 @@ public class ChatController {
                         chatService.getChatLists(page, size, sortDir, sortBy, keyword)));
     }
 
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<?>> getChatDetails(
             @PathVariable(value = "id") Long id
@@ -49,6 +52,7 @@ public class ChatController {
         );
     }
 
+    @RateLimit(capacity = 10, time = 1)
     @PostMapping()
     public ResponseEntity<ApiResponse<?>> createDirectChat(
             @RequestBody CreateDirectChatRequest request
@@ -60,6 +64,7 @@ public class ChatController {
         );
     }
 
+    @RateLimit(capacity = 10, time = 1)
     @PostMapping("/groupChats")
     public ResponseEntity<ApiResponse<ChatResponse>> createGroupChat(
             @RequestBody CreateGroupChatRequest request
@@ -72,6 +77,7 @@ public class ChatController {
         );
     }
 
+    @RateLimit(capacity = 20, time = 1)
     @PatchMapping("/{id}")
     public ResponseEntity<ApiResponse<ChatResponse>> updateChatInfo(
             @PathVariable Long id,
@@ -85,6 +91,7 @@ public class ChatController {
         );
     }
 
+    @RateLimit(capacity = 5, time = 1)
     @PostMapping(value = "/{id}/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<?>> updateGroupAvatar(
             @PathVariable Long id,
@@ -98,7 +105,7 @@ public class ChatController {
         );
     }
 
-
+    @RateLimit(capacity = 20, time = 1)
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<?>> deleteChat(
             @PathVariable Long id
@@ -111,6 +118,7 @@ public class ChatController {
         );
     }
 
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping("/{id}/messages")
     public ResponseEntity<ApiResponse<ChatMessageResponse>> getMessages(
             @PathVariable Long id,

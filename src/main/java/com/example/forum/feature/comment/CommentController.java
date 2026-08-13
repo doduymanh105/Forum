@@ -1,6 +1,7 @@
 package com.example.forum.feature.comment;
 
 
+import com.example.forum.core.annotation.RateLimit;
 import com.example.forum.feature.comment.dto.CreateCommentRequest;
 import com.example.forum.feature.comment.dto.UpdateCommentRequest;
 import com.example.forum.common.dto.ApiResponse;
@@ -16,6 +17,7 @@ public class CommentController {
 
     private final CommentService commentService;
 
+    @RateLimit(capacity = 10, time = 1)
     @PostMapping("/create")
     ResponseEntity<?> createComment(
             @RequestParam Long postId,
@@ -28,6 +30,8 @@ public class CommentController {
                         commentService.createComment(postId,request)
                 ));
     }
+
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping("/{postId}/rootCommentWithCount")
     ResponseEntity<?> getRootCommentWithReplyCount(
             @PathVariable Long postId,
@@ -42,6 +46,7 @@ public class CommentController {
         ));
     }
     // for specific comment
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping("/{postId}/{parentId}/replies")
     ResponseEntity<?> getCommentWithReplyCount(
             @PathVariable Long postId,
@@ -58,6 +63,7 @@ public class CommentController {
         );
     }
 
+    @RateLimit(capacity = 20, time = 1)
     @PatchMapping("/{commentId}/update")
     ResponseEntity<?> updateComment (
             @PathVariable Long commentId,
@@ -70,6 +76,7 @@ public class CommentController {
         ));
     }
 
+    @RateLimit(capacity = 20, time = 1)
     @PatchMapping("/{commentId}")
     ResponseEntity<?> softDeletedComment(
             @PathVariable Long commentId
@@ -84,6 +91,7 @@ public class CommentController {
 
     }
 
+    @RateLimit(capacity = 20, time = 1)
     @DeleteMapping("/{commentId}")
     ResponseEntity<?> hardDeletedComment(
             @PathVariable Long commentId
@@ -97,6 +105,7 @@ public class CommentController {
         );
     }
 
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping("/{commentId}/context")
     public ResponseEntity<?> getCommentContext(
             @PathVariable("commentId") Long commentId

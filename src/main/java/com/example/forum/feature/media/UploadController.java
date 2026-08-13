@@ -1,6 +1,7 @@
 package com.example.forum.feature.media;
 
 import com.example.forum.common.dto.ApiResponse;
+import com.example.forum.core.annotation.RateLimit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ public class UploadController {
 
     private final CloudinaryService cloudinaryService;
 
+    @RateLimit(capacity = 3, time = 1)
     @PostMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> upload(
             @RequestPart("file") MultipartFile file
@@ -28,6 +30,7 @@ public class UploadController {
         );
     }
 
+    @RateLimit(capacity = 3, time = 1)
     @PostMapping(value ="/post-media", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadPostMedia(
             @RequestPart("files") List<MultipartFile> files

@@ -2,6 +2,7 @@ package com.example.forum.feature.auth.controller;
 
 
 import com.example.forum.common.dto.ApiResponse;
+import com.example.forum.core.annotation.RateLimit;
 import com.example.forum.feature.auth.dto.request.*;
 import com.example.forum.feature.auth.service.VerificationService;
 import com.example.forum.feature.auth.service.impl.AuthenticationServiceImpl;
@@ -44,6 +45,7 @@ public class AuthenticationController {
         return ResponseEntity.ok(ApiResponse.success("User fetched", userDto));
     }
 
+    @RateLimit(capacity = 5, time = 1)
     @PostMapping(value = "/register")
     public ResponseEntity<?> register (
             @Valid @RequestBody RegisterRequest request
@@ -56,6 +58,7 @@ public class AuthenticationController {
         ));
     }
 
+    @RateLimit(capacity = 5, time = 1)
     @PostMapping("/verify-email")
     public ResponseEntity<?> verifyEmail (@Valid
             @RequestBody VerifyEmailRequest request
@@ -66,6 +69,7 @@ public class AuthenticationController {
         ));
     }
 
+    @RateLimit(capacity = 5, time = 1)
     @PatchMapping("/resend-verification-code")
     public ResponseEntity<?> resendVerificationCode(
             @Valid @RequestBody ResendEmailRequest request
@@ -78,6 +82,7 @@ public class AuthenticationController {
     }
 
 
+    @RateLimit(capacity = 5, time = 1)
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser (
             @Valid @RequestBody AuthenticationRequest request
@@ -88,6 +93,7 @@ public class AuthenticationController {
         ));
     }
 
+    @RateLimit(capacity = 5, time = 1)
     @PostMapping("/createAdmin")
     public ResponseEntity<?> createAdmin (
             @Valid @RequestBody RegisterRequest request
@@ -101,6 +107,7 @@ public class AuthenticationController {
         );
     }
 
+    @RateLimit(capacity = 5, time = 1)
     @PostMapping("/refresh-token")
     public ResponseEntity<?> refreshtoken(
             @RequestBody RefreshTokenRequest request
@@ -132,6 +139,7 @@ public class AuthenticationController {
         );
     }
 
+    @RateLimit(capacity = 5, time = 1)
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword( @RequestBody ForgotPasswordRequest request){
         authenticationService.forgotPassword(request.getEmail());
@@ -143,6 +151,7 @@ public class AuthenticationController {
         );
     }
 
+    @RateLimit(capacity = 5, time = 1)
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request){
         authenticationService.resetPassword(request);
@@ -154,6 +163,7 @@ public class AuthenticationController {
         );
     }
 
+    @RateLimit(capacity = 5, time = 1)
     @PostMapping("/2fa-login")
     public ResponseEntity<?> verify2faLogin (
             @Valid @RequestBody Verify2faLoginRequest request

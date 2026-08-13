@@ -1,6 +1,7 @@
 package com.example.forum.feature.auth.controller;
 
 import com.example.forum.common.dto.ApiResponse;
+import com.example.forum.core.annotation.RateLimit;
 import com.example.forum.domain.UserEntity;
 import com.example.forum.feature.auth.dto.request.OtpInputRequest;
 import com.example.forum.feature.auth.dto.request.PasswordConfirmRequest;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 public class TwoFactorController {
     private final TwoFactorServiceImpl twoFactorService;
 
+    @RateLimit(capacity = 5, time = 1)
     @GetMapping("/setup")
     public ResponseEntity<?> setup2af(
             @AuthenticationPrincipal UserEntity user
@@ -28,6 +30,7 @@ public class TwoFactorController {
         );
     }
 
+    @RateLimit(capacity = 5, time = 1)
     @PostMapping("/verify")
     public ResponseEntity<?> Verify2af(
             @RequestBody OtpInputRequest request,
@@ -41,6 +44,7 @@ public class TwoFactorController {
                 );
     }
 
+    @RateLimit(capacity = 5, time = 1)
     @PostMapping("/disable-2fa")
     public ResponseEntity<?> disable2fa(
             @AuthenticationPrincipal UserEntity user,

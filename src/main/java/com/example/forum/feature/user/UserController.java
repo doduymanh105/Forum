@@ -1,5 +1,6 @@
 package com.example.forum.feature.user;
 
+import com.example.forum.core.annotation.RateLimit;
 import com.example.forum.feature.user.dto.ChangePasswordRequest;
 import com.example.forum.feature.user.dto.UserUpdateRequest;
 import com.example.forum.common.dto.ApiResponse;
@@ -16,6 +17,7 @@ public class UserController {
 
     private final UserService userService;
 
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(Authentication authentication) {
         UserEntity userEntity = (UserEntity) authentication.getPrincipal();
@@ -25,6 +27,7 @@ public class UserController {
         ));
     }
 
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping("/{id}")
     public ResponseEntity<?> getUser(@PathVariable Long id) {
         return ResponseEntity.ok(
@@ -34,6 +37,7 @@ public class UserController {
         ));
     }
 
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping
     public ResponseEntity<?> getUsers(
             @RequestParam(defaultValue = "0") int page,
@@ -48,7 +52,7 @@ public class UserController {
         ));
     }
 
-
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping("/all")
     public ResponseEntity<?> getAllUsers() {
         return ResponseEntity.ok(ApiResponse.success(
@@ -57,6 +61,7 @@ public class UserController {
         ));
     }
 
+    @RateLimit(capacity = 3, time = 1)
     @PatchMapping("/{id}/change-password")
     public ResponseEntity<?> changePassword (
             @PathVariable Long id,
@@ -68,6 +73,7 @@ public class UserController {
         ));
     }
 
+    @RateLimit(capacity = 20, time = 1)
     @PatchMapping("/{id}/update")
     public ResponseEntity<?> updateUser(
             @PathVariable Long id,
@@ -79,6 +85,7 @@ public class UserController {
         ));
     }
 
+    @RateLimit(capacity = 20, time = 1)
     @DeleteMapping("/{id}")
     public ResponseEntity<?> hardDeleteUser(@PathVariable Long id) {
         userService.hardDeleteUser(id);
@@ -89,6 +96,7 @@ public class UserController {
         );
     }
 
+    @RateLimit(capacity = 20, time = 1)
     @PatchMapping("/{id}")
     public ResponseEntity<?> softDeleteUser(@PathVariable Long id) {
         userService.softDeleteUser(id);

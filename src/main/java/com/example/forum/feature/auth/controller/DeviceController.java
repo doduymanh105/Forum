@@ -1,6 +1,7 @@
 package com.example.forum.feature.auth.controller;
 
 import com.example.forum.common.dto.ApiResponse;
+import com.example.forum.core.annotation.RateLimit;
 import com.example.forum.domain.UserEntity;
 import com.example.forum.core.security.jwt.JWTService;
 import com.example.forum.feature.auth.service.impl.AuthenticationServiceImpl;
@@ -18,6 +19,7 @@ public class DeviceController {
     private final JWTService jwtService;
     private final AuthenticationServiceImpl authenticationService;
 
+    @RateLimit(capacity = 100, time = 1)
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping("/device-list")
     public ResponseEntity<?> getAllDevices(
@@ -36,6 +38,7 @@ public class DeviceController {
         );
     }
 
+    @RateLimit(capacity = 100, time = 1)
 //    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @DeleteMapping("/{deviceId}/revoke")
     public ResponseEntity<?> revokeADevice(
@@ -50,6 +53,7 @@ public class DeviceController {
         );
     }
 
+    @RateLimit(capacity = 10, time = 1)
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @DeleteMapping
     public ResponseEntity<?> revokeAllDevices(

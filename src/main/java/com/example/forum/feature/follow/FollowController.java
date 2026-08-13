@@ -1,6 +1,7 @@
 package com.example.forum.feature.follow;
 
 import com.example.forum.common.dto.ApiResponse;
+import com.example.forum.core.annotation.RateLimit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,7 @@ public class FollowController {
 
     private final FollowService followService;
 
+    @RateLimit(capacity = 20, time = 1)
     @PostMapping("/{followingId}/follow")
     ResponseEntity<?> follow(
            @PathVariable Long followingId
@@ -25,6 +27,7 @@ public class FollowController {
                 ));
     }
 
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping("/me/follower")
     ResponseEntity<?> getFollowers(
             @RequestParam(defaultValue = "0", required = false) int page,
@@ -38,6 +41,7 @@ public class FollowController {
                )) ;
     }
 
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping("/me/following")
     ResponseEntity<?> getFollowings(
             @RequestParam(defaultValue = "0", required = false) int page,
@@ -51,6 +55,7 @@ public class FollowController {
                )) ;
     }
 
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping("/{userId}/follower/count")
     ResponseEntity<?> getNumberOfFollower(
             @PathVariable Long userId
@@ -61,6 +66,7 @@ public class FollowController {
         ));
     }
 
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping("/{userId}/following/count")
     ResponseEntity<?> getNumberOfFollowing(
             @PathVariable Long userId
@@ -72,6 +78,7 @@ public class FollowController {
         ));
     }
 
+    @RateLimit(capacity = 100, time = 1)
     @DeleteMapping("/{followingId}/unfollow")
     ResponseEntity<?> unfollow(
             @PathVariable Long followingId
@@ -84,6 +91,7 @@ public class FollowController {
     }
 
 
+    @RateLimit(capacity = 100, time = 1)
     @DeleteMapping("/me/follower/{followerId}/remove")
     ResponseEntity<?> removeFollower(@PathVariable Long followerId) {
         followService.removeFollower(followerId);

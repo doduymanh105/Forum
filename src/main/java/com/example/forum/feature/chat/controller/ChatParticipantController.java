@@ -2,6 +2,7 @@ package com.example.forum.feature.chat.controller;
 
 
 import com.example.forum.common.dto.ApiResponse;
+import com.example.forum.core.annotation.RateLimit;
 import com.example.forum.feature.chat.service.ChatParticipantService;
 import com.example.forum.feature.chat.dto.chatRequestDto.AddNewMemberRequest;
 import com.example.forum.feature.chat.dto.chatRequestDto.ChangeRoleRequest;
@@ -18,6 +19,7 @@ public class ChatParticipantController {
 
     private final ChatParticipantService chatParticipantService;
 
+    @RateLimit(capacity = 100, time = 1)
     @GetMapping("/{id}/members")
     public ResponseEntity<ApiResponse<?>> getChatMembers(
             @PathVariable Long id
@@ -29,6 +31,7 @@ public class ChatParticipantController {
         );
     }
 
+    @RateLimit(capacity = 20, time = 1)
     @PostMapping("/{id}/members")
     public ResponseEntity<ApiResponse<?>> addMemberToChat(
             @PathVariable Long id,
@@ -41,6 +44,7 @@ public class ChatParticipantController {
         );
     }
 
+    @RateLimit(capacity = 20, time = 1)
     @PatchMapping("/{id}/members/{memId}")
     public ResponseEntity<ApiResponse<?>> changeMemberRole(
             @PathVariable Long id,
@@ -53,6 +57,7 @@ public class ChatParticipantController {
                         , chatParticipantService.changeMemberRole(id,memId,request ))
         );
     }
+    @RateLimit(capacity = 20, time = 1)
     @PatchMapping("/{id}/read")
     public ResponseEntity<ApiResponse<?>> readChatMessage(
             @PathVariable Long id
@@ -64,6 +69,7 @@ public class ChatParticipantController {
         );
     }
 
+    @RateLimit(capacity = 20, time = 1)
     @PatchMapping("/{id}/setting")
     public ResponseEntity<ApiResponse<?>> updateChatSetting(
             @PathVariable Long id,
@@ -77,6 +83,7 @@ public class ChatParticipantController {
         );
     }
 
+    @RateLimit(capacity = 20, time = 1)
     @DeleteMapping("/{id}/members/{memId}")
     public ResponseEntity<ApiResponse<?>> removeMemberFromGroup(
             @PathVariable Long id,
@@ -90,6 +97,7 @@ public class ChatParticipantController {
         );
     }
 
+    @RateLimit(capacity = 20, time = 1)
     @DeleteMapping("/{id}/members/me")
     public ResponseEntity<ApiResponse<?>> leaveChat(
             @PathVariable Long id
