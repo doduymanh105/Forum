@@ -2,12 +2,15 @@ package com.example.forum.feature.collection;
 
 import com.example.forum.common.dto.ApiResponse;
 import com.example.forum.core.annotation.RateLimit;
-import com.example.forum.feature.collection.dto.CreateCollectionRequest;
-import com.example.forum.feature.collection.dto.UpdateCollectionRequest;
+import com.example.forum.feature.collection.dto.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
+@Tag(name = "Collection API")
 @RestController
 @RequestMapping("/forum/saved")
 @RequiredArgsConstructor
@@ -17,7 +20,7 @@ public class CollectionController {
 
     @RateLimit(capacity = 10, time = 1)
     @PostMapping("/collections")
-    public ResponseEntity<?> createCollection(
+    public ResponseEntity<ApiResponse<CollectionResponseDto>> createCollection(
             @RequestBody CreateCollectionRequest request
     ){
         return ResponseEntity.ok(
@@ -28,7 +31,7 @@ public class CollectionController {
     }
     @RateLimit(capacity = 20, time = 1)
     @PatchMapping("/collections")
-    public ResponseEntity<?> updateCollection(
+    public ResponseEntity<ApiResponse<CollectionResponseDto>> updateCollection(
             @RequestBody UpdateCollectionRequest request
     ){
         return ResponseEntity.ok(
@@ -40,7 +43,7 @@ public class CollectionController {
 
     @RateLimit(capacity = 100, time = 1)
     @GetMapping("/collections")
-    public ResponseEntity<?> getCollections(){
+    public ResponseEntity<ApiResponse<List<CollectionResponseDto>>> getCollections(){
         return ResponseEntity.ok(
                 ApiResponse.success(
                         "collections get"
@@ -50,7 +53,7 @@ public class CollectionController {
 
     @RateLimit(capacity = 100, time = 1)
     @GetMapping("/collections/{id}")
-    public ResponseEntity<?> getCollectionById(
+    public ResponseEntity<ApiResponse<CollectionContentResponse>> getCollectionById(
            @PathVariable(name = "id") Long collectionId,
             @RequestParam(defaultValue = "") String keyword
     ){
@@ -63,7 +66,7 @@ public class CollectionController {
 
     @RateLimit(capacity = 20, time = 1)
     @DeleteMapping("/collections")
-    public ResponseEntity<?> softDeleteCollection(
+    public ResponseEntity<ApiResponse<?>> softDeleteCollection(
             @RequestParam Long id
     ){
         collectionService.deleteCollection(id);
@@ -75,7 +78,7 @@ public class CollectionController {
 
     @RateLimit(capacity = 20, time = 1)
     @PostMapping("/collections/saved")
-    public ResponseEntity<?> addPostToCollection(
+    public ResponseEntity<ApiResponse<CollectionResponseDto>> addPostToCollection(
             @RequestParam Long collectionId,
             @RequestParam Long postId
     ){
@@ -88,7 +91,7 @@ public class CollectionController {
 
     @RateLimit(capacity = 20, time = 1)
     @DeleteMapping("/collections/saved")
-    public ResponseEntity<?> removePostFromCollection(
+    public ResponseEntity<ApiResponse<CollectionResponseDto>> removePostFromCollection(
             @RequestParam Long collectionId,
             @RequestParam Long postId
     ){
@@ -101,7 +104,7 @@ public class CollectionController {
 
     @RateLimit(capacity = 100, time = 1)
     @GetMapping("/collections/saved-search")
-    public ResponseEntity<?> searchPost(
+    public ResponseEntity<ApiResponse<List<PostPreviewDto>>> searchPost(
             @RequestParam(required = false) String title
             ){
         return ResponseEntity.ok(
@@ -110,9 +113,6 @@ public class CollectionController {
                 , collectionService.searchSaved(title))
         );
     }
-
-
-
 }
 
 

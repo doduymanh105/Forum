@@ -4,7 +4,9 @@ import com.example.forum.common.dto.ApiResponse;
 import com.example.forum.core.annotation.RateLimit;
 import com.example.forum.domain.UserEntity;
 import com.example.forum.core.security.jwt.JWTService;
+import com.example.forum.feature.auth.dto.response.UserDeviceResponse;
 import com.example.forum.feature.auth.service.impl.AuthenticationServiceImpl;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +14,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
+@Tag(name = "Device API")
 @RestController
 @RequestMapping("/forum/user/devices")
 @RequiredArgsConstructor
@@ -22,7 +27,7 @@ public class DeviceController {
     @RateLimit(capacity = 100, time = 1)
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping("/device-list")
-    public ResponseEntity<?> getAllDevices(
+    public ResponseEntity<ApiResponse<List<UserDeviceResponse>>> getAllDevices(
             @AuthenticationPrincipal UserEntity currentUser,
             HttpServletRequest request
     ) {
@@ -41,7 +46,7 @@ public class DeviceController {
     @RateLimit(capacity = 100, time = 1)
 //    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @DeleteMapping("/{deviceId}/revoke")
-    public ResponseEntity<?> revokeADevice(
+    public ResponseEntity<ApiResponse<?>> revokeADevice(
             @AuthenticationPrincipal UserEntity user,
             @PathVariable String deviceId
     ){
@@ -56,7 +61,7 @@ public class DeviceController {
     @RateLimit(capacity = 10, time = 1)
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @DeleteMapping
-    public ResponseEntity<?> revokeAllDevices(
+    public ResponseEntity<ApiResponse<?>> revokeAllDevices(
             @AuthenticationPrincipal UserEntity currentUser
     ) {
         authenticationService.revokeAllDevice(currentUser);

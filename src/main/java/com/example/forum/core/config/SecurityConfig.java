@@ -59,6 +59,11 @@ public class SecurityConfig {
                                 "/ws/**"
                         )
                         .permitAll()
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
                         .requestMatchers("/forum/admin/**").hasRole("ADMIN")
                         .requestMatchers("/forum/user/**", "/forum/auth/me").hasAnyRole("USER", "ADMIN")
                         .anyRequest().authenticated()
