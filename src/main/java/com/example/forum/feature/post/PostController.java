@@ -3,11 +3,9 @@ package com.example.forum.feature.post;
 import com.example.forum.common.dto.CursorResponse;
 import com.example.forum.common.utils.SecurityUtils;
 import com.example.forum.core.annotation.RateLimit;
-import com.example.forum.feature.post.dto.CreatePostRequest;
-import com.example.forum.feature.post.dto.PostFilterRequest;
-import com.example.forum.feature.post.dto.UpdatePostRequest;
+import com.example.forum.feature.post.dto.*;
 import com.example.forum.common.dto.ApiResponse;
-import com.example.forum.feature.post.dto.PostResponseDto;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -183,6 +181,10 @@ public class PostController {
 
     @RateLimit(capacity = 5, time = 5)
     @PostMapping("/{postId}/summary")
+    @Operation(
+            summary = "AI Summary",
+            description = "Automatically summary by OpenAI. Used DB summary if summary already made"
+    )
     public ResponseEntity<ApiResponse<String>> getPostSummary(
             @PathVariable Long postId
     ){
@@ -190,6 +192,22 @@ public class PostController {
                 ApiResponse.success(
                         "Summary get"
                 , postService.getSummaryForPost(postId))
+        );
+    }
+
+    @RateLimit(capacity = 5, time = 1)
+    @PostMapping("/recommend-tags")
+    @Operation(
+            summary = "AI Recommend Tags",
+            description = "Analyzes the provided post content and recommends up to 3 suitable tags from the system's predefined list."
+    )
+    public ResponseEntity<ApiResponse<List<String>>> recommendTagsForPost(
+            @Valid @RequestBody PostRecommendTagRequest request
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "Recommended tags"
+                , postService.recommendTagsForContent(request))
         );
     }
 }

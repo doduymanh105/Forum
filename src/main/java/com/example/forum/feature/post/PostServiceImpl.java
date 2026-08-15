@@ -5,15 +5,13 @@ import com.example.forum.common.dto.CursorResponse;
 import com.example.forum.common.dto.PagedResponse;
 import com.example.forum.core.exception.AppException;
 import com.example.forum.core.exception.ErrorCode;
+import com.example.forum.feature.ai.ContentModerationService;
 import com.example.forum.feature.ai.GenerativeAiService;
 import com.example.forum.feature.follow.FollowRepository;
 import com.example.forum.feature.media.CloudinaryService;
 import com.example.forum.feature.comment.CommentRepository;
 import com.example.forum.feature.media.dto.UploadResponseDto;
-import com.example.forum.feature.post.dto.CreatePostRequest;
-import com.example.forum.feature.post.dto.PostFilterRequest;
-import com.example.forum.feature.post.dto.PostResponseDto;
-import com.example.forum.feature.post.dto.UpdatePostRequest;
+import com.example.forum.feature.post.dto.*;
 import com.example.forum.domain.*;
 import com.example.forum.domain.Enum.EventType;
 import com.example.forum.core.exception.ResourceNotFoundException;
@@ -59,6 +57,7 @@ public class PostServiceImpl implements PostService {
     private final NotificationService notificationService;
     private final CloudinaryService cloudinaryService;
     private final GenerativeAiService generativeAiService;
+    private final ContentModerationService moderationService;
 
     @Override
     @Transactional
@@ -66,6 +65,8 @@ public class PostServiceImpl implements PostService {
 
         UserEntity currentUser = securityService.getCurrentUser();  // dùng service
         Long userId = currentUser.getUserId();
+
+        moderationService.validateContentStrictly(request.getPostTitle(), request.getPostContent());
 
         UserEntity creator = userRepo.findById(userId)
                 .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND));
@@ -202,6 +203,24 @@ public class PostServiceImpl implements PostService {
         postRepo.save(post);
 
         return aiSummary;
+    }
+
+    @Override
+    public List<String> recommendTagsForContent(PostRecommendTagRequest request) {
+
+        List<Tag> tagList = tagRepo.findAll();
+        List<String> stringList = tagList.stream()
+                .map(Tag::getTagName)
+                .toList();
+
+        List<String> aiRecommendedTags = generativeAiService.recommendTags(
+                request.getTitle(),
+                request.getContent(),
+                stringList
+        );
+        return aiRecommendedTags.stream()
+                .filter(stringList::contains)
+                .toList();
     }
 
     public PostResponseDto mapToPostResponseDto(PostEntity post, UserEntity currentUser, boolean singlePost) {

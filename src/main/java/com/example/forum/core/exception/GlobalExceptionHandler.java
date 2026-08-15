@@ -121,15 +121,17 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(AppException.class)
-    public ResponseEntity<Map<String, Object>> handleAppException(AppException e){
+    public ResponseEntity<ApiResponse<?>> handleAppException(AppException e){
         ErrorCode errorCode = e.getErrorCode();
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("code", errorCode.getStatus().value());
-        response.put("message", errorCode.getMessage());
         return ResponseEntity
                 .status(errorCode.getStatus())
-                .body(response);
+                .body(
+                        ApiResponse.error(
+                                errorCode.getStatus().value()
+                                , e.getMessage()
+                        )
+                );
     }
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<String>> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {

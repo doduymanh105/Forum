@@ -43,15 +43,12 @@ public enum ErrorCode {
 
     // AI
     POST_CONTENT_MIN_LENGTH(HttpStatus.BAD_REQUEST, "Post content is too short"),
-    POST_CONTENT_MAX_LENGTH(HttpStatus.BAD_REQUEST, "Post content is too long")
+    POST_CONTENT_MAX_LENGTH(HttpStatus.BAD_REQUEST, "Post content is too long"),
 
 
-
-
-
-
-    ;
+    POST_CONTENT_TOXIC(HttpStatus.BAD_REQUEST,"Post content toxic");
 
     private final HttpStatus status;
     private final String message;
+
 }
