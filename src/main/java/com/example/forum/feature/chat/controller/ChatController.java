@@ -2,6 +2,7 @@ package com.example.forum.feature.chat.controller;
 
 import com.example.forum.common.dto.ApiResponse;
 import com.example.forum.core.annotation.RateLimit;
+import com.example.forum.feature.chat.dto.chatResponseDto.CustomPageable;
 import com.example.forum.feature.chat.service.ChatService;
 import com.example.forum.feature.chat.dto.chatRequestDto.CreateDirectChatRequest;
 import com.example.forum.feature.chat.dto.chatRequestDto.CreateGroupChatRequest;
@@ -10,6 +11,7 @@ import com.example.forum.feature.chat.dto.chatRequestDto.UpdateChatRequest;
 import com.example.forum.feature.chat.dto.chatResponseDto.ChatMessageResponse;
 import com.example.forum.feature.chat.dto.chatResponseDto.ChatResponse;
 import com.example.forum.feature.notification.WebsocketNotificationService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +19,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+@Tag(name = "Chat API")
 @RestController
 @RequestMapping("/forum/chats")
 @RequiredArgsConstructor
@@ -27,7 +30,7 @@ public class ChatController {
 
     @RateLimit(capacity = 100, time = 1)
     @GetMapping()
-    public ResponseEntity<ApiResponse<?>> getChats(
+    public ResponseEntity<ApiResponse<CustomPageable<ChatResponse>>> getChats(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "desc") String sortDir,
@@ -42,7 +45,7 @@ public class ChatController {
 
     @RateLimit(capacity = 100, time = 1)
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<?>> getChatDetails(
+    public ResponseEntity<ApiResponse<ChatResponse>> getChatDetails(
             @PathVariable(value = "id") Long id
     ){
         return ResponseEntity.ok(ApiResponse.success(
@@ -54,7 +57,7 @@ public class ChatController {
 
     @RateLimit(capacity = 10, time = 1)
     @PostMapping()
-    public ResponseEntity<ApiResponse<?>> createDirectChat(
+    public ResponseEntity<ApiResponse<ChatResponse>> createDirectChat(
             @RequestBody CreateDirectChatRequest request
             ){
         return ResponseEntity.ok(
@@ -93,7 +96,7 @@ public class ChatController {
 
     @RateLimit(capacity = 5, time = 1)
     @PostMapping(value = "/{id}/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<?>> updateGroupAvatar(
+    public ResponseEntity<ApiResponse<ChatResponse>> updateGroupAvatar(
             @PathVariable Long id,
             @RequestPart("file")MultipartFile file
             ){

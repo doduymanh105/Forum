@@ -7,6 +7,7 @@ import com.example.forum.feature.chat.service.MessageService;
 import com.example.forum.feature.chat.dto.chatRequestDto.EditMessageRequest;
 import com.example.forum.feature.chat.dto.chatRequestDto.MessageRequest;
 import com.example.forum.feature.chat.dto.chatResponseDto.MessageResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+@Tag(name = "Message API")
 @RestController
 @RequestMapping("/forum/chats")
 @RequiredArgsConstructor
@@ -31,8 +33,9 @@ public class MessageController {
 
         return ResponseEntity.ok(response);
     }
+
     @PostMapping( value = "/{chatId}/media-messages", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<?>> sendMediaMessage(
+    public ResponseEntity<ApiResponse<MessageResponse>> sendMediaMessage(
             @PathVariable Long chatId,
             @RequestPart("file") MultipartFile file
     ){
