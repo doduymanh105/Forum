@@ -68,6 +68,9 @@ public class PostEntity {
     @Column(name = "status")
     private PostStatus status = PostStatus.PUBLISHED;
 
+    @Column(name = "summary", columnDefinition = "TEXT")
+    private String summary;
+
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

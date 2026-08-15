@@ -57,4 +57,6 @@ public interface PostService {
 
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     PostResponseDto addMediaToPost(Long postId, List<MultipartFile> files);
+
+    String getSummaryForPost(Long postId);
 }

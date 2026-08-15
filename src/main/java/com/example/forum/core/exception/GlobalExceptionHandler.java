@@ -2,7 +2,9 @@ package com.example.forum.core.exception;
 
 import com.example.forum.common.constant.MessageConstants;
 import com.example.forum.common.dto.ApiResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.http.protocol.HTTP;
+import org.springframework.ai.openai.api.common.OpenAiApiClientErrorException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -170,6 +173,19 @@ public class GlobalExceptionHandler {
                                 HttpStatus.TOO_MANY_REQUESTS.value(),
                                 ex.getMessage())
                 );
+    }
+
+    private static final String LLM_COMMUNICATION_ERROR = "Unable to communicate with the configured LLM. Please try again later.";
+
+    @ExceptionHandler(OpenAiApiClientErrorException.class)
+    public ResponseEntity<ApiResponse<Object>> handleOpenAiException(OpenAiApiClientErrorException exception) {
+
+        log.error("OpenAI returned an error: ", exception);
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiResponse.error(
+                        HttpStatus.SERVICE_UNAVAILABLE.value(),
+                        LLM_COMMUNICATION_ERROR));
     }
 
 }

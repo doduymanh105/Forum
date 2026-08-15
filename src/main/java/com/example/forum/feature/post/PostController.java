@@ -180,4 +180,16 @@ public class PostController {
                 )
         );
     }
+
+    @RateLimit(capacity = 5, time = 5)
+    @PostMapping("/{postId}/summary")
+    public ResponseEntity<ApiResponse<String>> getPostSummary(
+            @PathVariable Long postId
+    ){
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "Summary get"
+                , postService.getSummaryForPost(postId))
+        );
+    }
 }
