@@ -88,3 +88,6 @@ logging.level.root=INFO
 logging.level.org.springframework=WARN
 logging.level.org.hibernate.orm.jdbc.bind=TRACE 
 logging.level.com.example.forum=DEBUG
+
+spring.ai.openai.api-key=Your-open-api-key
+spring.ai.openai.chat.options.model=gpt-3.5-turbo

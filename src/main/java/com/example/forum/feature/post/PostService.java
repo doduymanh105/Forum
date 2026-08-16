@@ -2,11 +2,8 @@ package com.example.forum.feature.post;
 
 import com.example.forum.common.dto.CursorResponse;
 import com.example.forum.domain.UserEntity;
-import com.example.forum.feature.post.dto.CreatePostRequest;
-import com.example.forum.feature.post.dto.PostFilterRequest;
-import com.example.forum.feature.post.dto.UpdatePostRequest;
+import com.example.forum.feature.post.dto.*;
 import com.example.forum.common.dto.PagedResponse;
-import com.example.forum.feature.post.dto.PostResponseDto;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.multipart.MultipartFile;
@@ -57,4 +54,8 @@ public interface PostService {
 
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     PostResponseDto addMediaToPost(Long postId, List<MultipartFile> files);
+
+    String getSummaryForPost(Long postId);
+
+    List<String> recommendTagsForContent(PostRecommendTagRequest request);
 }

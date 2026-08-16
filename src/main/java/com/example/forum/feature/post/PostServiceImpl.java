@@ -3,15 +3,15 @@ package com.example.forum.feature.post;
 import com.example.forum.common.constant.MessageConstants;
 import com.example.forum.common.dto.CursorResponse;
 import com.example.forum.common.dto.PagedResponse;
-import com.example.forum.common.service.cache.CacheService;
+import com.example.forum.core.exception.AppException;
+import com.example.forum.core.exception.ErrorCode;
+import com.example.forum.feature.ai.ContentModerationService;
+import com.example.forum.feature.ai.GenerativeAiService;
 import com.example.forum.feature.follow.FollowRepository;
 import com.example.forum.feature.media.CloudinaryService;
 import com.example.forum.feature.comment.CommentRepository;
 import com.example.forum.feature.media.dto.UploadResponseDto;
-import com.example.forum.feature.post.dto.CreatePostRequest;
-import com.example.forum.feature.post.dto.PostFilterRequest;
-import com.example.forum.feature.post.dto.PostResponseDto;
-import com.example.forum.feature.post.dto.UpdatePostRequest;
+import com.example.forum.feature.post.dto.*;
 import com.example.forum.domain.*;
 import com.example.forum.domain.Enum.EventType;
 import com.example.forum.core.exception.ResourceNotFoundException;
@@ -19,14 +19,10 @@ import com.example.forum.domain.Enum.MediaType;
 import com.example.forum.feature.tag.TagRepository;
 import com.example.forum.feature.tag.dto.TagDto;
 import com.example.forum.feature.user.UserRepository;
-import com.example.forum.feature.user.dto.UserSummaryDto;
 import com.example.forum.feature.vote.VoteRepository;
 import com.example.forum.feature.media.MediaRepository;
 import com.example.forum.common.utils.SecurityUtils;
 import com.example.forum.feature.notification.NotificationService;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -42,7 +38,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -61,6 +56,8 @@ public class PostServiceImpl implements PostService {
     private final SecurityUtils securityService;
     private final NotificationService notificationService;
     private final CloudinaryService cloudinaryService;
+    private final GenerativeAiService generativeAiService;
+    private final ContentModerationService moderationService;
 
     @Override
     @Transactional
@@ -68,6 +65,8 @@ public class PostServiceImpl implements PostService {
 
         UserEntity currentUser = securityService.getCurrentUser();  // dùng service
         Long userId = currentUser.getUserId();
+
+        moderationService.validateContentStrictly(request.getPostTitle(), request.getPostContent());
 
         UserEntity creator = userRepo.findById(userId)
                 .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND));
@@ -176,6 +175,54 @@ public class PostServiceImpl implements PostService {
         return mapToPostResponseDto(post, currentUser, false);
     }
 
+    @Override
+    @Transactional
+    public String getSummaryForPost(Long postId) {
+
+        PostEntity post = postRepo.findByPostId(postId)
+                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));
+
+        if (post.getSummary() != null && !post.getSummary().trim().isEmpty()) {
+            return post.getSummary();
+        }
+
+        String content = post.getPostContent();
+        // Strip HTML tags and replace non-breaking spaces (&nbsp;) with standard spaces before counting
+        String cleanText = content != null ? content.replaceAll("<[^>]*>", "").replaceAll("&nbsp;", " ").trim() : "";
+        int wordCount = cleanText.isEmpty() ? 0 : cleanText.split("\\s+").length;
+
+        if (wordCount < 300) {
+            throw new AppException(ErrorCode.POST_CONTENT_MIN_LENGTH);
+        } else if (wordCount > 2000) {
+            throw new AppException(ErrorCode.POST_CONTENT_MAX_LENGTH);
+        }
+
+        String aiSummary = generativeAiService.summarizeText(content);
+
+        post.setSummary(aiSummary);
+        postRepo.save(post);
+
+        return aiSummary;
+    }
+
+    @Override
+    public List<String> recommendTagsForContent(PostRecommendTagRequest request) {
+
+        List<Tag> tagList = tagRepo.findAll();
+        List<String> stringList = tagList.stream()
+                .map(Tag::getTagName)
+                .toList();
+
+        List<String> aiRecommendedTags = generativeAiService.recommendTags(
+                request.getTitle(),
+                request.getContent(),
+                stringList
+        );
+        return aiRecommendedTags.stream()
+                .filter(stringList::contains)
+                .toList();
+    }
+
     public PostResponseDto mapToPostResponseDto(PostEntity post, UserEntity currentUser, boolean singlePost) {
 
         Long commentCount = commentRepository.countByPostEntity(post);
@@ -205,7 +252,7 @@ public class PostServiceImpl implements PostService {
                 isVoted = voteOpt.get().getVoteType().toString();
             }
 
-            // 4. Logic kiểm tra isSaved (TODO: Bạn cần tạo SavePostRepository)
+            // isSaved (TODO: Bạn cần tạo SavePostRepository)
             // isSaved = savePostRepo.existsByUserEntityAndPostEntity(currentUser, post);
         }
 
@@ -238,14 +285,14 @@ public class PostServiceImpl implements PostService {
                 .isSaved(isSaved)
                 .build();
     }
-    private UserSummaryDto mapToUserSummaryDto(UserEntity user) {
-        return UserSummaryDto.builder()
-                .userId(user.getUserId())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .avatarUrl(user.getAvatarUrl())
-                .build();
-    }
+//    private UserSummaryDto mapToUserSummaryDto(UserEntity user) {
+//        return UserSummaryDto.builder()
+//                .userId(user.getUserId())
+//                .username(user.getUsername())
+//                .email(user.getEmail())
+//                .avatarUrl(user.getAvatarUrl())
+//                .build();
+//    }
 
     private TagDto mapToTagDto(Tag tag) {
         return TagDto.builder()

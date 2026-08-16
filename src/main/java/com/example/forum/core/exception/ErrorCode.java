@@ -39,8 +39,16 @@ public enum ErrorCode {
 
 
     POST_ALREADY_IN_COLLECTION(HttpStatus.CONFLICT,"Post already saved" ),
-    POST_NOT_IN_COLLECTION(HttpStatus.CONFLICT,"Post not in collection" );
+    POST_NOT_IN_COLLECTION(HttpStatus.CONFLICT,"Post not in collection" ),
+
+    // AI
+    POST_CONTENT_MIN_LENGTH(HttpStatus.BAD_REQUEST, "Post content is too short"),
+    POST_CONTENT_MAX_LENGTH(HttpStatus.BAD_REQUEST, "Post content is too long"),
+
+
+    POST_CONTENT_TOXIC(HttpStatus.BAD_REQUEST,"Post content toxic");
 
     private final HttpStatus status;
     private final String message;
+
 }
