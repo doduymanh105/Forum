@@ -1,11 +1,15 @@
 package com.example.forum.feature.notification;
 
+import com.example.forum.common.dto.PagedResponse;
 import com.example.forum.common.utils.SecurityUtils;
 import com.example.forum.common.dto.ApiResponse;
+import com.example.forum.feature.notification.dto.NotificationDto;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "Notification API")
 @RestController
 @RequestMapping("/forum/user")
 @RequiredArgsConstructor
@@ -24,7 +28,7 @@ public class NotificationController {
 
 
     @GetMapping("/me/notification")
-    ResponseEntity<?> getNotificationWithReadStatus(
+    ResponseEntity<ApiResponse<PagedResponse<NotificationDto>>> getNotificationWithReadStatus(
             @RequestParam(defaultValue = "0",required = false) int page,
             @RequestParam(defaultValue = "10",required = false) int size,
             @RequestParam(defaultValue = "", required = false) String keyword,
@@ -39,7 +43,7 @@ public class NotificationController {
     }
 
     @GetMapping("/me/notification/count")
-    ResponseEntity<?> getNumberOfNotifications(){
+    ResponseEntity<ApiResponse<Long>> getNumberOfNotifications(){
         return ResponseEntity.ok(
                 ApiResponse.success(
                         "Number of unread notifications",
@@ -49,7 +53,7 @@ public class NotificationController {
     }
 
     @PatchMapping("/me/notification/markAllRead")
-    ResponseEntity<?> markAllRead(){
+    ResponseEntity<ApiResponse<?>> markAllRead(){
         notificationService.markAllAsRead();
         return ResponseEntity.ok(ApiResponse.success(
                 "Marked All notification as read",
@@ -57,7 +61,7 @@ public class NotificationController {
         ));
     }
     @PatchMapping("/me/notification/{id}")
-    ResponseEntity<?> markAsRead(
+    ResponseEntity<ApiResponse<?>> markAsRead(
             @PathVariable Long id){
         notificationService.markAsRead(id);
         return ResponseEntity.ok(ApiResponse.success(
@@ -67,7 +71,7 @@ public class NotificationController {
     }
 
     @PatchMapping("/me/notification/{id}/archive")
-    public ResponseEntity<ApiResponse<Void>> archiveNotification(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<?>> archiveNotification(@PathVariable Long id) {
         notificationService.archiveNotification(id);
         return ResponseEntity.ok(ApiResponse.success(
                 "Notification archived"
@@ -75,7 +79,7 @@ public class NotificationController {
     }
 
     @DeleteMapping("/me/notification/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteNotification(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<?>> deleteNotification(@PathVariable Long id) {
         notificationService.deleteNotification(id);
         return ResponseEntity.ok(ApiResponse.success(
                 "Notification deleted"

@@ -3,15 +3,22 @@ package com.example.forum.feature.chat.controller;
 
 import com.example.forum.common.dto.ApiResponse;
 import com.example.forum.core.annotation.RateLimit;
+import com.example.forum.feature.chat.dto.chatResponseDto.MemberResponse;
+import com.example.forum.feature.chat.dto.chatResponseDto.MyChatSettingResponse;
+import com.example.forum.feature.chat.dto.chatResponseDto.ReadReceiptResponse;
 import com.example.forum.feature.chat.service.ChatParticipantService;
 import com.example.forum.feature.chat.dto.chatRequestDto.AddNewMemberRequest;
 import com.example.forum.feature.chat.dto.chatRequestDto.ChangeRoleRequest;
 import com.example.forum.feature.chat.dto.chatRequestDto.UpdateChatSettingRequest;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
+@Tag(name = "Chat Participant API")
 @RestController
 @RequestMapping("/forum/chats")
 @RequiredArgsConstructor
@@ -21,7 +28,7 @@ public class ChatParticipantController {
 
     @RateLimit(capacity = 100, time = 1)
     @GetMapping("/{id}/members")
-    public ResponseEntity<ApiResponse<?>> getChatMembers(
+    public ResponseEntity<ApiResponse<List<MemberResponse>>> getChatMembers(
             @PathVariable Long id
     ){
         return ResponseEntity.ok(
@@ -33,7 +40,7 @@ public class ChatParticipantController {
 
     @RateLimit(capacity = 20, time = 1)
     @PostMapping("/{id}/members")
-    public ResponseEntity<ApiResponse<?>> addMemberToChat(
+    public ResponseEntity<ApiResponse<List<MemberResponse>>> addMemberToChat(
             @PathVariable Long id,
             @RequestBody AddNewMemberRequest request
             ){
@@ -46,7 +53,7 @@ public class ChatParticipantController {
 
     @RateLimit(capacity = 20, time = 1)
     @PatchMapping("/{id}/members/{memId}")
-    public ResponseEntity<ApiResponse<?>> changeMemberRole(
+    public ResponseEntity<ApiResponse<MemberResponse>> changeMemberRole(
             @PathVariable Long id,
             @PathVariable Long memId,
             @RequestBody ChangeRoleRequest request
@@ -59,7 +66,7 @@ public class ChatParticipantController {
     }
     @RateLimit(capacity = 20, time = 1)
     @PatchMapping("/{id}/read")
-    public ResponseEntity<ApiResponse<?>> readChatMessage(
+    public ResponseEntity<ApiResponse<ReadReceiptResponse>> readChatMessage(
             @PathVariable Long id
     ){
         return ResponseEntity.ok(
@@ -71,7 +78,7 @@ public class ChatParticipantController {
 
     @RateLimit(capacity = 20, time = 1)
     @PatchMapping("/{id}/setting")
-    public ResponseEntity<ApiResponse<?>> updateChatSetting(
+    public ResponseEntity<ApiResponse<MyChatSettingResponse>> updateChatSetting(
             @PathVariable Long id,
             @RequestBody UpdateChatSettingRequest request
     ){

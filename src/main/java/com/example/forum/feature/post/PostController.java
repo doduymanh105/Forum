@@ -1,11 +1,14 @@
 package com.example.forum.feature.post;
 
 import com.example.forum.common.dto.CursorResponse;
+import com.example.forum.common.dto.PagedResponse;
 import com.example.forum.common.utils.SecurityUtils;
 import com.example.forum.core.annotation.RateLimit;
 import com.example.forum.feature.post.dto.*;
 import com.example.forum.common.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import com.example.forum.feature.post.dto.PostResponseDto;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 
+@Tag(name = "Post API")
 @RestController
 @RequestMapping("/forum/posts")
 @CrossOrigin(origins = "http://localhost:5173")
@@ -31,7 +35,7 @@ public class PostController {
 
     @RateLimit(capacity = 5, time = 1)
     @PostMapping(value ="/create")
-    public ResponseEntity<?> createPost (
+    public ResponseEntity<ApiResponse<PostResponseDto>> createPost (
             @Valid @RequestBody CreatePostRequest request
             ) {
         PostResponseDto postResponse = postService.createPost(request);
@@ -46,7 +50,7 @@ public class PostController {
 
     @RateLimit(capacity = 100, time = 1)
     @GetMapping("/{postId}")
-    public ResponseEntity<?> getPostById(@PathVariable Long postId) {
+    public ResponseEntity<ApiResponse<PostResponseDto>> getPostById(@PathVariable Long postId) {
         return ResponseEntity.ok(
                 ApiResponse.success(
                         "get post by id successfully",
@@ -57,7 +61,7 @@ public class PostController {
 
     @RateLimit(capacity = 100, time = 1)
     @GetMapping()
-    public ResponseEntity<?> getPostByOwner(
+    public ResponseEntity<ApiResponse<PagedResponse<PostResponseDto>>> getPostByOwner(
             @RequestParam Long userId,
             @RequestParam(defaultValue = "") String keyword,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
@@ -72,7 +76,7 @@ public class PostController {
 
     @RateLimit(capacity = 100, time = 1)
     @GetMapping("/all")
-    public ResponseEntity<?> getPosts(
+    public ResponseEntity<ApiResponse<PagedResponse<PostResponseDto>>> getPosts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -90,7 +94,7 @@ public class PostController {
 
     @RateLimit(capacity = 100, time = 1)
     @GetMapping("/newsfeed")
-    public ResponseEntity<?> getNewFeed(
+    public ResponseEntity<ApiResponse<CursorResponse<PostResponseDto>>> getNewFeed(
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String cursor
     ){
@@ -104,7 +108,7 @@ public class PostController {
 
     @RateLimit(capacity = 100, time = 1)
     @GetMapping("/search")
-    public ResponseEntity<?> searchPosts(
+    public ResponseEntity<ApiResponse<PagedResponse<PostResponseDto>>> searchPosts(
             @ModelAttribute PostFilterRequest request,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "0") int page
@@ -118,7 +122,7 @@ public class PostController {
 
     @RateLimit(capacity = 20, time = 1)
     @PatchMapping("/{id}/update")
-    public ResponseEntity<?> updatePost(
+    public ResponseEntity<ApiResponse<PostResponseDto>> updatePost(
             @PathVariable Long id,
             @RequestBody UpdatePostRequest request
             ){
@@ -130,7 +134,7 @@ public class PostController {
 
     @RateLimit(capacity = 20, time = 1)
     @PatchMapping("/{id}/soft-delete")
-    public ResponseEntity<?> softDeletePost(@PathVariable Long id){
+    public ResponseEntity<ApiResponse<?>> softDeletePost(@PathVariable Long id){
         postService.softDeletePost(id);
         return ResponseEntity.ok(ApiResponse.success(
                 "Post is temporaty deleted!",
@@ -140,7 +144,7 @@ public class PostController {
 
     @RateLimit(capacity = 20, time = 1)
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> hardDeletePost(@PathVariable Long id){
+    public ResponseEntity<ApiResponse<?>> hardDeletePost(@PathVariable Long id){
         postService.hardDeletePost(id);
         return ResponseEntity.ok(
                 ApiResponse.success(
@@ -152,7 +156,7 @@ public class PostController {
 
     @RateLimit(capacity = 20, time = 1)
     @PostMapping(value = "/{postId}/media", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> addMediaToPost(
+    public ResponseEntity<ApiResponse<PostResponseDto>> addMediaToPost(
             @PathVariable Long postId,
             @RequestPart("files") List<MultipartFile> files
     ) {
@@ -165,7 +169,7 @@ public class PostController {
 
     @RateLimit(capacity = 20, time = 1)
     @DeleteMapping("/{postId}/media/{mediaId}")
-    public ResponseEntity<?> removeMediaFromPost(
+    public ResponseEntity<ApiResponse<?>> removeMediaFromPost(
             @PathVariable Long postId,
             @PathVariable Long mediaId
     ) {

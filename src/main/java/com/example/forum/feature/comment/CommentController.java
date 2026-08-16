@@ -1,15 +1,22 @@
 package com.example.forum.feature.comment;
 
 
+import com.example.forum.common.dto.CursorResponse;
+import com.example.forum.common.dto.PagedResponse;
 import com.example.forum.core.annotation.RateLimit;
+import com.example.forum.feature.comment.dto.CommentContextResponse;
+import com.example.forum.feature.comment.dto.CommentDto;
 import com.example.forum.feature.comment.dto.CreateCommentRequest;
 import com.example.forum.feature.comment.dto.UpdateCommentRequest;
 import com.example.forum.common.dto.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+
+@Tag(name = "Comment API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/forum/post/comment")
@@ -19,7 +26,7 @@ public class CommentController {
 
     @RateLimit(capacity = 10, time = 1)
     @PostMapping("/create")
-    ResponseEntity<?> createComment(
+    ResponseEntity<ApiResponse<CommentDto>> createComment(
             @RequestParam Long postId,
             @RequestBody CreateCommentRequest request
             ) {
@@ -33,7 +40,7 @@ public class CommentController {
 
     @RateLimit(capacity = 100, time = 1)
     @GetMapping("/{postId}/rootCommentWithCount")
-    ResponseEntity<?> getRootCommentWithReplyCount(
+    ResponseEntity<ApiResponse<CursorResponse<CommentDto>>> getRootCommentWithReplyCount(
             @PathVariable Long postId,
             @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "10") int size,
@@ -48,7 +55,7 @@ public class CommentController {
     // for specific comment
     @RateLimit(capacity = 100, time = 1)
     @GetMapping("/{postId}/{parentId}/replies")
-    ResponseEntity<?> getCommentWithReplyCount(
+    ResponseEntity<ApiResponse<PagedResponse<CommentDto>>> getCommentWithReplyCount(
             @PathVariable Long postId,
             @PathVariable Long parentId,
             @RequestParam(defaultValue = "0") int page,
@@ -65,7 +72,7 @@ public class CommentController {
 
     @RateLimit(capacity = 20, time = 1)
     @PatchMapping("/{commentId}/update")
-    ResponseEntity<?> updateComment (
+    ResponseEntity<ApiResponse<CommentDto>> updateComment (
             @PathVariable Long commentId,
             @RequestBody UpdateCommentRequest request
     ) {
@@ -78,7 +85,7 @@ public class CommentController {
 
     @RateLimit(capacity = 20, time = 1)
     @PatchMapping("/{commentId}")
-    ResponseEntity<?> softDeletedComment(
+    ResponseEntity<ApiResponse<?>> softDeletedComment(
             @PathVariable Long commentId
     ) {
         commentService.softDeletedComment(commentId);
@@ -93,7 +100,7 @@ public class CommentController {
 
     @RateLimit(capacity = 20, time = 1)
     @DeleteMapping("/{commentId}")
-    ResponseEntity<?> hardDeletedComment(
+    ResponseEntity<ApiResponse<?>> hardDeletedComment(
             @PathVariable Long commentId
     ){
         commentService.hardDeletedComment(commentId);
@@ -107,7 +114,7 @@ public class CommentController {
 
     @RateLimit(capacity = 100, time = 1)
     @GetMapping("/{commentId}/context")
-    public ResponseEntity<?> getCommentContext(
+    public ResponseEntity<ApiResponse<CommentContextResponse>> getCommentContext(
             @PathVariable("commentId") Long commentId
     ) {
         return ResponseEntity.ok(
