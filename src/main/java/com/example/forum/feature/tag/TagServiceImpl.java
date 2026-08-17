@@ -4,6 +4,7 @@ import com.example.forum.common.constant.AppConstants;
 import com.example.forum.domain.Tag;
 import com.example.forum.feature.tag.dto.TrendingTagDto;
 import com.example.forum.feature.tag.dto.TrendingTagRequest;
+import com.example.forum.feature.tag.dto.TrendingTagResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -24,28 +25,30 @@ public class TagServiceImpl implements TagService {
 
     @Override
     @Cacheable(value = "topTags", key = "'trending'")
-    public List<TrendingTagDto> getTrendingTag() {
+    public TrendingTagResponse getTrendingTag() {
         LocalDateTime sinceTime = LocalDateTime.now().minusDays(AppConstants.DEFAULT_DAYS);
         var projections = tagRepository.getTrendingTags(sinceTime, AppConstants.DEFAULT_LIMIT);
-        return projections.stream()
+        List<TrendingTagDto> listDto= projections.stream()
                 .map(p -> new TrendingTagDto(
                         p.getTagId(),
                         p.getTagName(),
                         p.getTotalScore())
                 ).toList();
+        return new TrendingTagResponse(listDto);
     }
 
     @Override
     @CachePut(value = "topTags", key = "'trending'")
-    public List<TrendingTagDto> refreshTrendingTag() {
+    public TrendingTagResponse refreshTrendingTag() {
         LocalDateTime sinceTime = LocalDateTime.now().minusDays(AppConstants.DEFAULT_DAYS);
         var projections = tagRepository.getTrendingTags(sinceTime, AppConstants.DEFAULT_LIMIT);
 
-        return projections.stream()
+        List<TrendingTagDto> listDto= projections.stream()
                 .map(p -> new TrendingTagDto(
                         p.getTagId(),
                         p.getTagName(),
                         p.getTotalScore())
                 ).toList();
+        return new TrendingTagResponse(listDto);
     }
 }

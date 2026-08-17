@@ -4,6 +4,7 @@ import com.example.forum.common.dto.ApiResponse;
 import com.example.forum.core.annotation.RateLimit;
 import com.example.forum.domain.Tag;
 import com.example.forum.feature.tag.dto.TrendingTagDto;
+import com.example.forum.feature.tag.dto.TrendingTagResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -31,7 +32,7 @@ public class TagController {
 
     @RateLimit(capacity = 100, time = 1)
     @GetMapping("/trendingTags")
-    public ResponseEntity<ApiResponse<List<TrendingTagDto>>> getTrendingTags(){
+    public ResponseEntity<ApiResponse<TrendingTagResponse>> getTrendingTags(){
         return ResponseEntity.ok(
                 ApiResponse.success(
                         "Trending tags get",

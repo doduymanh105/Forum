@@ -1,15 +1,14 @@
 package com.example.forum.feature.tag.dto;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TrendingTagDto {
-    private Long tagId;
-    private String tagName;
-    private Long totalScore;
+public class TrendingTagResponse {
+    List<TrendingTagDto> tags;
 }
