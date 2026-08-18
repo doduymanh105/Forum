@@ -14,12 +14,14 @@ import com.example.forum.common.utils.SecurityUtils;
 import com.example.forum.feature.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
 
 @Service
 @RequiredArgsConstructor
-public class VoteServiceIpml implements VoteService {
+public class VoteServiceImpl implements VoteService {
 
     private final PostRepository postRepository;
     private final SecurityUtils securityService;
@@ -27,6 +29,7 @@ public class VoteServiceIpml implements VoteService {
     private final NotificationService notificationService;
 
     @Override
+    @Transactional
     public PostVoteResponse votePost(Long postId, VoteType newVote) {
 
         PostEntity post = postRepository.findByPostId(postId)
@@ -40,10 +43,13 @@ public class VoteServiceIpml implements VoteService {
         VoteType finalVote;
 
         if(existingVote.isEmpty()) {
+            if (newVote == VoteType.NONE) {
+                return new PostVoteResponse(post.getPostId(), post.getUpvotes(), post.getDownvotes(), post.getUpvotes() - post.getDownvotes(), VoteType.NONE);
+            }
             finalVote = createVote(post, currentUser, newVote);
         } else {
             Vote vote = existingVote.get();
-            if (vote.getVoteType() == newVote) {
+            if (newVote == VoteType.NONE || vote.getVoteType() == newVote) {
                 finalVote = cancelVote(post, vote, newVote);
             } else {
                 finalVote = changeVote(post, vote, newVote);
@@ -92,9 +98,9 @@ public class VoteServiceIpml implements VoteService {
     }
 
     private VoteType cancelVote(PostEntity post, Vote existingVote, VoteType currentVote) {
-        voteRepository.delete(existingVote);
         if (currentVote == VoteType.UPVOTE) post.setUpvotes(Math.max(0, post.getUpvotes() - 1));
         else if (currentVote == VoteType.DOWNVOTE) post.setDownvotes(Math.max(0, post.getDownvotes() - 1));
+        voteRepository.delete(existingVote);
         return VoteType.NONE;
     }
 

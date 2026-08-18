@@ -2,6 +2,7 @@ package com.example.forum.core.exception;
 
 import com.example.forum.common.constant.MessageConstants;
 import com.example.forum.common.dto.ApiResponse;
+import io.jsonwebtoken.ExpiredJwtException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.protocol.HTTP;
 import org.springframework.ai.openai.api.common.OpenAiApiClientErrorException;
@@ -38,6 +39,23 @@ public class GlobalExceptionHandler {
                         errors
                 )
         );
+    }
+
+    @ExceptionHandler(ExpiredJwtException.class)
+    public ResponseEntity<ApiResponse<?>> handleJwtExpirationException(
+            ExpiredJwtException ex
+    ){
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse
+                        .error(HttpStatus.UNAUTHORIZED.value(), "Token expiration"));
+    }
+
+    @ExceptionHandler({io.jsonwebtoken.MalformedJwtException.class, io.jsonwebtoken.security.SignatureException.class})
+    public ResponseEntity<ApiResponse<?>> handleInvalidJwtException(Exception ex) {
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error(HttpStatus.UNAUTHORIZED.value(), "Invalid token"));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

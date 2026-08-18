@@ -59,11 +59,6 @@ public class SecurityConfig {
                                 "/ws/**"
                         )
                         .permitAll()
-                        .requestMatchers(
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html"
-                        ).permitAll()
                         .requestMatchers("/forum/admin/**").hasRole("ADMIN")
                         .requestMatchers("/forum/user/**", "/forum/auth/me").hasAnyRole("USER", "ADMIN")
                         .anyRequest().authenticated()
@@ -71,10 +66,9 @@ public class SecurityConfig {
 
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
-                            // Bỏ qua OAuth endpoints
+                            // for not redirect to oauth login
                             String path = request.getRequestURI();
                             if (path.startsWith("/oauth2") || path.contains("/oauth2/")) {
-                                // Let OAuth flow handle it
                                 response.sendRedirect("/oauth2/authorization/google");
                             } else {
                                 response.setContentType("application/json");
@@ -86,7 +80,7 @@ public class SecurityConfig {
 
 //                .oauth2Login(oauth -> oauth
 //                        .authorizationEndpoint(auth -> auth
-//                                .baseUri("/oauth2/authorization")  // ✅ Đảm bảo match với frontend
+//                                .baseUri("/oauth2/authorization")
 //                        )
 //                        .userInfoEndpoint(user ->
 //                                user.oidcUserService(customOidc2UserService)
@@ -105,17 +99,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-
-        // 1. Cho phép Frontend của bạn (đổi port nếu cần)
         configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://127.0.0.1:5501"));
 
-        // 2. Cho phép các method phổ biến
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
 
-        // 3. Cho phép tất cả các header (Authorization, Content-Type...)
         configuration.setAllowedHeaders(List.of("*"));
 
-        // 4. Cho phép gửi kèm cookie/credentials (quan trọng cho login)
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
