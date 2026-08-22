@@ -1,7 +1,9 @@
+spring.config.import=optional:file:.env
+
 spring.application.name=forum
 
 ### jwt
-jwt.secret=${JWT_SECRET:YOUR_JWT_SECRET_KEY_HERE_AT_LEAST_32_BYTES}
+jwt.secret=${JWT_SECRET}
 jwt.access-token.expiration=900000
 app.refresh-token.expiration=2592000000
 
@@ -19,33 +21,32 @@ app.2fa.secret.timeout=900
 app.redis.revoke.user.timeout=1000
 
 ### database
-spring.datasource.url=jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ForumDB}
-spring.datasource.username=${DB_USERNAME:postgres}
-spring.datasource.password=${DB_PASSWORD:YOUR_DATABASE_PASSWORD}
-spring.jpa.hibernate.ddl-auto=update
+spring.datasource.url=jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:forum_db}
+spring.datasource.username=${DB_USERNAME}
+spring.datasource.password=${DB_PASSWORD}
+spring.jpa.hibernate.ddl-auto=validate
 spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
 
-#flyway
+# flyway
 spring.flyway.enabled=true
 spring.flyway.baseline-on-migrate=true
 spring.flyway.baseline-version=1
 
-
 ### mail
 spring.mail.host=smtp.gmail.com
 spring.mail.port=587
-spring.mail.username=${MAIL_USERNAME:YOUR_EMAIL@gmail.com}
-spring.mail.password=${MAIL_PASSWORD:YOUR_EMAIL_APP_PASSWORD}
+spring.mail.username=${MAIL_USERNAME}
+spring.mail.password=${MAIL_PASSWORD}
 spring.mail.protocol=smtp
 spring.mail.properties.mail.smtp.auth=true
 spring.mail.properties.mail.smtp.starttls.enable=true
 spring.mail.properties.mail.smtp.starttls.required=true
 
 ### Oauth
-spring.security.oauth2.client.registration.google.client-id=${GOOGLE_CLIENT_ID:YOUR_GOOGLE_CLIENT_ID}
-spring.security.oauth2.client.registration.google.client-secret=${GOOGLE_CLIENT_SECRET:YOUR_GOOGLE_CLIENT_SECRET}
-#http://localhost:8080/oauth2/authorization/google
+spring.security.oauth2.client.registration.google.client-id=${GOOGLE_CLIENT_ID}
+spring.security.oauth2.client.registration.google.client-secret=${GOOGLE_CLIENT_SECRET}
+# http://localhost:8080/oauth2/authorization/google
 
 spring.security.oauth2.client.registration.google.redirect-uri={baseUrl}/login/oauth2/code/{registrationId}
 spring.security.oauth2.client.registration.google.scope=openid, profile, email
@@ -61,9 +62,9 @@ spring.data.redis.host=${REDIS_HOST:localhost}
 spring.data.redis.port=${REDIS_PORT:6379}
 
 ### cloudinary
-cloudinary.cloud-name=${CLOUDINARY_CLOUD_NAME:YOUR_CLOUDINARY_CLOUD_NAME}
-cloudinary.api-key=${CLOUDINARY_API_KEY:YOUR_CLOUDINARY_API_KEY}
-cloudinary.api-secret=${CLOUDINARY_API_SECRET:YOUR_CLOUDINARY_API_SECRET}
+cloudinary.cloud-name=${CLOUDINARY_CLOUD_NAME}
+cloudinary.api-key=${CLOUDINARY_API_KEY}
+cloudinary.api-secret=${CLOUDINARY_API_SECRET}
 
 ### file
 spring.servlet.multipart.max-file-size=5MB
@@ -80,20 +81,27 @@ app.sse.timeout=1800000
 collection-limit=5
 
 # ==========================================
-# SYSTEM LOGGING CONFIGURATION (SLF4J + LOGBACK)
+# LOGGING (SLF4J + LOGBACK)
 # ==========================================
+
+# 1. WHERE to save logs
 logging.file.name=logs/forum-app.log
+
+# 2. config "Cut file" (Rolling Policy)
 logging.logback.rollingpolicy.max-file-size=10MB
 logging.logback.rollingpolicy.max-history=30
 logging.logback.rollingpolicy.total-size-cap=1GB
 
+# 3. Format logging text
 logging.pattern.console=%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n
 logging.pattern.file=%d{yyyy-MM-dd HH:mm:ss.SSS} %5p --- [%t] %-40.40logger{39} : %m%n
 
+# 4. global log
 logging.level.root=INFO
 logging.level.org.springframework=WARN
-logging.level.org.hibernate.orm.jdbc.bind=TRACE 
+logging.level.org.hibernate.orm.jdbc.bind=TRACE
 logging.level.com.example.forum=DEBUG
 
-spring.ai.openai.api-key=Your-open-api-key
-spring.ai.openai.chat.options.model=gpt-3.5-turbo
+### OpenAI
+spring.ai.openai.api-key=${OPENAI_API_KEY}
+spring.ai.openai.chat.options.model=${OPENAI_MODEL:gpt-3.5-turbo}
