@@ -1,0 +1,48 @@
+services:
+  forum-db:
+    image: postgres:17
+    container_name: forum-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${DB_OUTER_PORT}:5432" #export port to local postgres
+    volumes:
+      - forum-db-data:/var/lib/postgresql/data
+    networks:
+      - forum-net
+
+
+  forum-redis:
+    image: redis:7-alpine
+    container_name: forum-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - forum-net
+
+  forum-app:
+    build: "."
+    container_name: forum-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://forum-db:5432/${DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_DATA_REDIS_HOST: forum-redis
+      SPRING_DATA_REDIS_PORT: 6379
+    depends_on:
+      - forum-db
+      - forum-redis
+    networks:
+      - forum-net
+
+volumes:
+  forum-db-data:
+networks:
+  forum-net:
