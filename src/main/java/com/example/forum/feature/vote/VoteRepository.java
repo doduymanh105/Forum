@@ -33,4 +33,6 @@ public interface VoteRepository extends JpaRepository<Vote, Long> {
             @Param("postId") Long postId,
             @Param("voteType")String voteType
             );
+
+    List<Vote> findByUserEntityUserIdAndPostEntityPostIdIn(Long userId, List<Long> postIds);
 }

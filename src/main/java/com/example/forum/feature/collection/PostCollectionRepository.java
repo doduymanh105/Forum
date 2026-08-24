@@ -35,4 +35,23 @@ public interface PostCollectionRepository extends JpaRepository<PostCollection, 
             @Param("userId") Long userId
     );
 
+    @Query("""
+            SELECT pc.postEntity.postId
+            FROM PostCollection pc
+            WHERE pc.saveCollection.userEntity.userId = :userId
+            AND pc.postEntity.postId IN :postIds
+            """)
+    List<Long> findByUserIdAndPostIdIn(
+            @Param("userId") Long userId,
+            @Param("postIds") List<Long> postIds);
+
+    @Query("""
+            SELECT COUNT(pc) > 0
+            FROM PostCollection pc
+            WHERE pc.saveCollection.userEntity.userId = :userId
+            AND pc.postEntity.postId = :postId
+            """)
+    boolean existsByUserIdAndPostId(
+            @Param("userId") Long userId,
+            @Param("postId") Long postIds);
 }

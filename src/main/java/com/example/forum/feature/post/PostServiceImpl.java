@@ -7,9 +7,9 @@ import com.example.forum.core.exception.AppException;
 import com.example.forum.core.exception.ErrorCode;
 import com.example.forum.feature.ai.ContentModerationService;
 import com.example.forum.feature.ai.GenerativeAiService;
+import com.example.forum.feature.collection.PostCollectionRepository;
 import com.example.forum.feature.follow.FollowRepository;
 import com.example.forum.feature.media.CloudinaryService;
-import com.example.forum.feature.comment.CommentRepository;
 import com.example.forum.feature.media.dto.UploadResponseDto;
 import com.example.forum.feature.post.dto.*;
 import com.example.forum.domain.*;
@@ -48,10 +48,10 @@ public class PostServiceImpl implements PostService {
     private final PostRepository postRepo;
     private final UserRepository userRepo;
     private final TagRepository tagRepo;
-    private final CommentRepository commentRepository;
     private final VoteRepository voteRepository;
     private final MediaRepository mediaRepository;
     private final FollowRepository followRepository;
+    private final PostCollectionRepository postCollectionRepository;
 
     private final SecurityUtils securityService;
     private final NotificationService notificationService;
@@ -225,74 +225,23 @@ public class PostServiceImpl implements PostService {
 
     public PostResponseDto mapToPostResponseDto(PostEntity post, UserEntity currentUser, boolean singlePost) {
 
-        Long commentCount = commentRepository.countByPostEntity(post);
-
         List<MediaEntity> mediaEntityList = mediaRepository.findByPostPostId(post.getPostId());
 
         String postContentPreview = post.getPostContent();
 
-        Integer timeRead =0;
-
-        if (post.getPostContent() != null && !post.getPostContent().isEmpty() && !singlePost) {
-            int words = post.getPostContent().split("\\s+").length;
-            timeRead = (int) Math.ceil((double) words / 150);
-            if(post.getPostContent().length()<=150){
-                postContentPreview=post.getPostContent();
-            } else {
-                postContentPreview = post.getPostContent().substring(0, 150);
-            }
-        }
-
         String isVoted = null;
-        Boolean isSaved = false;
-
+        boolean isSaved= false;
         if (currentUser != null) {
             Optional<Vote> voteOpt = voteRepository.findByUserEntityUserIdAndPostEntityPostId(currentUser.getUserId(), post.getPostId());
             if (voteOpt.isPresent()) {
                 isVoted = voteOpt.get().getVoteType().toString();
             }
 
-            // isSaved (TODO: Bạn cần tạo SavePostRepository)
-            // isSaved = savePostRepo.existsByUserEntityAndPostEntity(currentUser, post);
+             isSaved = postCollectionRepository.existsByUserIdAndPostId(currentUser.getUserId(), post.getPostId());
         }
 
-        return PostResponseDto.builder()
-                .postId(post.getPostId())
-                .postTitle(post.getPostTitle())
-                .postContent(postContentPreview)
-                .thumbnailUrl(post.getThumbnailUrl())
-                .upvotes(post.getUpvotes())
-                .downvotes(post.getDownvotes())
-                .countedViews(post.getCountedViews())
-                .mediaEntityList( mediaEntityList)
-                .createdAt(post.getCreatedAt())
-                .updatedAt(post.getUpdatedAt())
-                .creatorName(post.getCreator().displayUsername())
-                .creatorId(post.getCreator().getUserId())
-                .creatorAvatarUrl(post.getCreator().getAvatarUrl())
-//                .categories(post
-//                        .getCategories().stream()
-//                        .map(this::mapToCategoryDto)
-//                        .collect(Collectors.toSet())
-//                )
-                .tags(post.getTags().stream()
-                        .map(this::mapToTagDto)
-                        .collect(Collectors.toSet())
-                )
-                .commentCount(commentCount)
-                .timeRead(timeRead)
-                .isVoted(isVoted)
-                .isSaved(isSaved)
-                .build();
+        return buildPostResponseDto(post, currentUser, mediaEntityList, isVoted, isSaved, singlePost);
     }
-//    private UserSummaryDto mapToUserSummaryDto(UserEntity user) {
-//        return UserSummaryDto.builder()
-//                .userId(user.getUserId())
-//                .username(user.getUsername())
-//                .email(user.getEmail())
-//                .avatarUrl(user.getAvatarUrl())
-//                .build();
-//    }
 
     private TagDto mapToTagDto(Tag tag) {
         return TagDto.builder()
@@ -348,7 +297,7 @@ public class PostServiceImpl implements PostService {
         UserEntity currentUser = securityService.getCurrentUserOrNull();
 
         Page<PostEntity> postEntitiesPage = postRepo.findByPostTitleContainingIgnoreCaseAndIsArchivedFalse(keyword, pageable);
-        List<PostResponseDto> postListContent = postEntitiesPage.getContent().stream().map(postEntity -> mapToPostResponseDto(postEntity, currentUser, false)).toList();
+        List<PostResponseDto> postListContent = mapToPostResponseDtoList(postEntitiesPage.getContent(), currentUser, false);
 
         return new PagedResponse<>(
                 postListContent,
@@ -383,8 +332,7 @@ public class PostServiceImpl implements PostService {
 
         Page<PostEntity> postPage = postRepo.findAll(specification, pageable);
 
-        List<PostResponseDto> data = postPage.getContent().stream()
-                .map(post-> mapToPostResponseDto( post, user, false)).toList();
+        List<PostResponseDto> data = mapToPostResponseDtoList(postPage.getContent(), user, false);
 
         return new PagedResponse<>(
                 data,
@@ -425,9 +373,7 @@ public class PostServiceImpl implements PostService {
             posts.remove(posts.size() - 1);
         }
 
-        List<PostResponseDto> postResponseDtoList = posts.stream()
-                .map(post -> mapToPostResponseDto(post, currentUser, false))
-                .toList();
+        List<PostResponseDto> postResponseDtoList = mapToPostResponseDtoList(posts, currentUser, false);
 
         String nextCursor = null;
         if (!posts.isEmpty()) {
@@ -509,4 +455,83 @@ public class PostServiceImpl implements PostService {
                 .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));
         postRepo.delete(post);
     }
+
+
+    private PostResponseDto buildPostResponseDto(
+            PostEntity post,
+            UserEntity user,
+            List<MediaEntity> mediaEntityList,
+            String isVoted,
+            Boolean isSaved,
+            boolean singlePost
+    ){
+        String postContentPreview = post.getPostContent();
+        Integer timeRead = 0;
+        if (post.getPostContent() != null && !post.getPostContent().isEmpty()) {
+            String plainText = post.getPostContent().replaceAll("<[^>]*>", "").replaceAll("&nbsp;", " ").trim();
+            int words = plainText.isEmpty() ? 0 : plainText.split("\\s+").length;
+            timeRead = (int) Math.ceil((double) words / 150);
+            if (!singlePost) {
+                if(post.getPostContent().length() <= 150){
+                    postContentPreview = post.getPostContent();
+                } else {
+                    postContentPreview = post.getPostContent().substring(0, 150);
+                }
+            }
+        }
+        return PostResponseDto.builder()
+                .postId(post.getPostId())
+                .postTitle(post.getPostTitle())
+                .postContent(postContentPreview)
+                .thumbnailUrl(post.getThumbnailUrl())
+                .upvotes(post.getUpvotes())
+                .downvotes(post.getDownvotes())
+                .countedViews(post.getCountedViews())
+                .mediaEntityList(mediaEntityList != null ? mediaEntityList : new ArrayList<>())
+                .createdAt(post.getCreatedAt())
+                .updatedAt(post.getUpdatedAt())
+                .creatorName(post.getCreator().displayUsername())
+                .creatorId(post.getCreator().getUserId())
+                .creatorAvatarUrl(post.getCreator().getAvatarUrl())
+                .tags(post.getTags().stream().map(this::mapToTagDto).collect(Collectors.toSet()))
+                .commentCount((long) post.getCommentCount())
+                .timeRead(timeRead)
+                .isVoted(isVoted)
+                .isSaved(isSaved)
+                .build();
+    }
+
+    public List<PostResponseDto> mapToPostResponseDtoList(
+            List<PostEntity> posts,
+            UserEntity currentUser,
+            boolean singlePost
+    ){
+        List<Long> postIds = posts.stream().map(PostEntity::getPostId).toList();
+        List<MediaEntity> allMedia = mediaRepository.findByPostPostIdIn(postIds);
+
+        Map<Long, List<MediaEntity>> mediaMap = allMedia.stream()
+                .collect(Collectors.groupingBy(media -> media.getPost().getPostId()));
+
+        Map<Long, String> voteMap = new HashMap<>();
+        if (currentUser != null) {
+            List<Vote> userVotes = voteRepository.findByUserEntityUserIdAndPostEntityPostIdIn(currentUser.getUserId(), postIds);
+            userVotes.forEach(vote -> voteMap.put(vote.getPostEntity().getPostId(), vote.getVoteType().toString()));
+        }
+
+        Map<Long, Boolean> savedMap = new HashMap<>();
+        if(currentUser!= null){
+            List<Long> savedList = postCollectionRepository.findByUserIdAndPostIdIn(currentUser.getUserId(),postIds);
+            savedList.forEach(id -> savedMap.put(id, true));
+        }
+
+        return posts.stream()
+                .map(post -> {
+                    List<MediaEntity> mediaList = mediaMap.getOrDefault(post.getPostId(), new ArrayList<>());
+                    String isVoted = voteMap.get(post.getPostId());
+                    Boolean isSaved = savedMap.getOrDefault(post.getPostId(), false);
+
+                    return buildPostResponseDto(post, currentUser, mediaList, isVoted, isSaved, singlePost);
+                }).toList();
+    }
+
 }
