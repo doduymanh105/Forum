@@ -1,2 +1,2 @@
-INSERT INTO public.roles (name) VALUES ('ROLE_USER');
-INSERT INTO public.roles (name) VALUES ('ROLE_ADMIN');
+INSERT INTO public.roles (name) VALUES ('ROLE_USER') ON CONFLICT (name) DO NOTHING;;
+INSERT INTO public.roles (name) VALUES ('ROLE_ADMIN') ON CONFLICT (name) DO NOTHING;;
