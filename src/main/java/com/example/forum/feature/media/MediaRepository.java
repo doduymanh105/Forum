@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface MediaRepository extends JpaRepository<MediaEntity, Long> {
     List<MediaEntity> findByPostPostId(Long id);
+
+    List<MediaEntity> findByPostPostIdIn(List<Long> postIdList);
 }
