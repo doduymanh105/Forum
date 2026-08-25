@@ -84,6 +84,7 @@ public class TwoFactorServiceImpl implements TwoFactorService {
     }
 
     @Override
+    @Transactional
     public List<String> verifyOtp(String email, int otp){
         UserEntity user = userRepository.findByEmail(email)
                 .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND));
@@ -105,10 +106,11 @@ public class TwoFactorServiceImpl implements TwoFactorService {
             user.setTwoFactorSecret(secretStr);
             userRepository.save(user);
         }
+
+        List<String> backupCodes = backupCodeService.generateBackupCode(user);
         redisService.delete(keyTemp2fa);
 
-
-        return backupCodeService.generateBackupCode(user);
+        return backupCodes;
 
     }
 

@@ -1,6 +1,7 @@
 package com.example.forum.feature.follow;
 
 import com.example.forum.common.constant.MessageConstants;
+import com.example.forum.feature.chat.dto.chatResponseDto.CustomPageable;
 import com.example.forum.feature.user.UserSummaryProjection;
 import com.example.forum.common.dto.PagedResponse;
 import com.example.forum.feature.user.dto.UserSummaryDto;
@@ -19,6 +20,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -34,6 +37,7 @@ public class FollowServiceImpl implements FollowService {
     private final NotificationService notificationService;
 
     @Override
+    @Transactional
     public void followUser(Long followingId) {
 
         UserEntity following = userRepository.findById(followingId)
@@ -138,9 +142,8 @@ public class FollowServiceImpl implements FollowService {
     }
 
     @Override
+    @Transactional
     public void unfollow(Long id) {
-
-        getUserOrThrow(id);
 
         UserEntity follower = securityService.getCurrentUser(); // user
         Long currentFollowerId= follower.getUserId();
@@ -150,7 +153,7 @@ public class FollowServiceImpl implements FollowService {
         Optional<Follow> existingFollowId = followRepository.findById(followId);
 
         if(existingFollowId.isPresent()){
-            Follow existFollow= (Follow) existingFollowId.get();
+            Follow existFollow= existingFollowId.get();
             followRepository.delete(existFollow);
         } else  {
             throw new BadRequestException(MessageConstants.HAVE_NOT_FOLLOW);
@@ -158,6 +161,7 @@ public class FollowServiceImpl implements FollowService {
     }
 
     @Override
+    @Transactional
     public void removeFollower(Long id) {
 
         getUserOrThrow(id);
@@ -173,6 +177,24 @@ public class FollowServiceImpl implements FollowService {
         } else {
             throw new BadRequestException(MessageConstants.USER_HAVE_NOT_FOLLOW);
         }
+    }
+
+    @Override
+    public PagedResponse<UserSummaryDto> findMutualFriends(int page, int size, String keyword) {
+        Long currentUserId = securityService.getCurrentUser().getUserId();
+        String searchKeyword = (keyword == null) ? "" : keyword;
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<UserSummaryProjection> friendPage = followRepository.findMutualFriends(currentUserId, searchKeyword, pageable);
+
+        List<UserSummaryDto> friends = friendPage.getContent().stream()
+                .map(f -> new UserSummaryDto(f.getUserId(), f.getUserName(), f.getEmail(), f.getAvatarUrl()))
+                .toList();
+
+        return new PagedResponse<>(
+                friends, friendPage.getNumber(), friendPage.getSize(),
+                friendPage.getTotalElements(), friendPage.getTotalPages(), friendPage.isLast()
+        );
     }
 
     private UserEntity getUserOrThrow(Long userId) {

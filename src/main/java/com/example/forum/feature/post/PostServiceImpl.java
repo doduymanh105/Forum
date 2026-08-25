@@ -83,6 +83,7 @@ public class PostServiceImpl implements PostService {
                 .upvotes(0L)
                 .downvotes(0L)
                 .countedViews(0L)
+                .timeRead(calculateTimeRead(request.getPostContent()))
                 .isArchived(false)
                 .build();
 
@@ -107,6 +108,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Transactional
     public void removeMediaFromPost(Long postId, Long mediaId) {
         PostEntity post = postRepo.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));
@@ -394,6 +396,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @CacheEvict(value = "postDetail", key = "#postId")
+    @Transactional
     public PostResponseDto updatePost(Long postId, UpdatePostRequest request) {
 
         PostEntity post = postRepo.findByPostId(postId)
@@ -415,6 +418,7 @@ public class PostServiceImpl implements PostService {
         }
         if(request.getContent() !=null && !request.getContent().isBlank()) {
             post.setPostContent(request.getContent());
+            post.setTimeRead(calculateTimeRead(request.getContent()));
         }
 
         if(request.getTagSet()!= null) {
@@ -431,6 +435,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @CacheEvict(value = "postDetail", key = "#id")
+    @Transactional
     public void softDeletePost(Long id) {
         PostEntity post= postRepo.findByPostId(id)
                 .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));
@@ -450,6 +455,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Transactional
     public void hardDeletePost(Long id) {
         PostEntity post= postRepo.findByPostId(id)
                 .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));
@@ -466,13 +472,10 @@ public class PostServiceImpl implements PostService {
             boolean singlePost
     ){
         String postContentPreview = post.getPostContent();
-        Integer timeRead = 0;
         if (post.getPostContent() != null && !post.getPostContent().isEmpty()) {
             String plainText = post.getPostContent().replaceAll("<[^>]*>", "").replaceAll("&nbsp;", " ").trim();
             int words = plainText.isEmpty() ? 0 : plainText.split("\\s+").length;
-            timeRead = (int) Math.ceil((double) words / 150);
-            if (!singlePost) {
-                if(post.getPostContent().length() <= 150){
+            if (!singlePost) {if(plainText.length() <= 150){
                     postContentPreview = post.getPostContent();
                 } else {
                     postContentPreview = post.getPostContent().substring(0, 150);
@@ -495,7 +498,7 @@ public class PostServiceImpl implements PostService {
                 .creatorAvatarUrl(post.getCreator().getAvatarUrl())
                 .tags(post.getTags().stream().map(this::mapToTagDto).collect(Collectors.toSet()))
                 .commentCount((long) post.getCommentCount())
-                .timeRead(timeRead)
+                .timeRead(post.getTimeRead())
                 .isVoted(isVoted)
                 .isSaved(isSaved)
                 .build();
@@ -532,6 +535,15 @@ public class PostServiceImpl implements PostService {
 
                     return buildPostResponseDto(post, currentUser, mediaList, isVoted, isSaved, singlePost);
                 }).toList();
+    }
+
+    private Integer calculateTimeRead(String content) {
+        if (content == null || content.isBlank()) return 0;
+
+        String plainText = content.replaceAll("<[^>]*>", "").replaceAll("&nbsp;", " ").trim();
+        int words = plainText.isEmpty() ? 0 : plainText.split("\\s+").length;
+
+        return (int) Math.ceil((double) words / 150);
     }
 
 }

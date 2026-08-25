@@ -207,6 +207,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Transactional
     public CommentDto updateComment(Long commentId, UpdateCommentRequest request) {
         CommentEntity comment = commentRepository.findByCommentIdAndIsDeletedFalse(commentId)
                 .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.COMMENT_NOT_FOUND));
@@ -244,6 +245,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Transactional
     public void hardDeletedComment(Long commentId) {
         CommentEntity comment = commentRepository.findByCommentIdAndIsDeletedFalse(commentId)
                 .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.COMMENT_NOT_FOUND));

@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,9 +30,10 @@ import static org.springframework.data.domain.Sort.Direction.DESC;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
     private final FollowRepository followRepository;
+
     private final SecurityUtils securityUtils;
+    private final PasswordEncoder passwordEncoder;
 
     public UserResponseDto getCurrentUser(UserEntity userEntity) {
         return mapToUserResponseDto(userEntity);
@@ -110,6 +112,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public UserResponseDto updateUser(Long id, UserUpdateRequest request) {
         UserEntity user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND));
@@ -120,21 +123,19 @@ public class UserServiceImpl implements UserService {
         if (request.getUsername()!=null && !request.getUsername().isBlank()) {
             user.setUserName(request.getUsername());
         }
-
-        userRepository.save(user);
-
         return mapToUserResponseDto(user);
     }
 
     @Override
+    @Transactional
     public void softDeleteUser(Long id) {
         UserEntity user = userRepository.findById(id)
                 .orElseThrow(()-> new IllegalArgumentException(MessageConstants.USER_NOT_FOUND));
         user.setIsDeleted(true);
-        userRepository.save(user);
     }
 
     @Override
+    @Transactional
     public void hardDeleteUser(Long id) {
         UserEntity user= userRepository.findById(id)
                 .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND));
@@ -142,6 +143,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void changePassword(Long id, ChangePasswordRequest request) {
         UserEntity user = userRepository.findById(id)
                 .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND));
@@ -149,16 +151,6 @@ public class UserServiceImpl implements UserService {
             throw new IllegalArgumentException(MessageConstants.OLD_PASSWORD_INCORRECT);
         }
         user.setUserPassword(passwordEncoder.encode(request.getNewPassword()));
-        userRepository.save(user);
     }
 
-    @Override
-    public UserResponseDto updateProfilePicture() {
-        return null;
-    }
-
-    @Override
-    public UserResponseDto updateUserInfo() {
-        return null;
-    }
 }

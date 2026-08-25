@@ -71,6 +71,9 @@ public class PostEntity {
     @Column(name = "summary", columnDefinition = "TEXT")
     private String summary;
 
+    @Column(name = "time_read")
+    private int timeRead;
+
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

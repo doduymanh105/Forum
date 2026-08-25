@@ -1,6 +1,8 @@
 package com.example.forum.feature.follow;
 
 import com.example.forum.common.dto.PagedResponse;
+import com.example.forum.feature.chat.dto.chatResponseDto.CustomPageable;
+import com.example.forum.feature.user.UserSummaryProjection;
 import com.example.forum.feature.user.dto.UserSummaryDto;
 import org.springframework.security.access.prepost.PreAuthorize;
 
@@ -19,7 +21,11 @@ public interface FollowService {
 
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     void unfollow(Long followingId);
+
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     void removeFollower(Long followerId);
+
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    PagedResponse<UserSummaryDto> findMutualFriends(int page, int size, String keyword);
 
 }

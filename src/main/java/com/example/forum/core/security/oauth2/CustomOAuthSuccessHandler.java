@@ -1,6 +1,7 @@
 package com.example.forum.core.security.oauth2;
 
 import com.example.forum.common.constant.MessageConstants;
+import com.example.forum.common.service.email.EmailService;
 import com.example.forum.common.utils.RequestUtils;
 import com.example.forum.core.security.jwt.JWTService;
 import com.example.forum.domain.UserEntity;
@@ -17,6 +18,9 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.Formatter;
 import java.util.UUID;
 
 @Component
@@ -26,6 +30,7 @@ public class CustomOAuthSuccessHandler implements AuthenticationSuccessHandler {
     private final JWTService jwtService;
     private final UserRepository userRepository;
     private final DeviceService deviceService;
+    private final EmailService emailService;
 
     @Value("${app.oauth2.redirect-base-uri}")
     private String redirectBaseUri;
@@ -56,9 +61,9 @@ public class CustomOAuthSuccessHandler implements AuthenticationSuccessHandler {
             if (deviceId == null) deviceId = UUID.randomUUID().toString();
 
             boolean isNewDevice =deviceService.saveUserDevice(user, deviceId, rawRefreshToken, userAgent, ip);
-//            if (isNewDevice){
-//                emailService.sendAlertNewDeviceLogin(user.getEmail(), userAgent, ip, formatter.format(Instant.now()));
-//            }
+            if (isNewDevice){
+                emailService.sendAlertNewDeviceLogin(user.getEmail(), userAgent, ip, LocalDateTime.now().toString());
+            }
 
 //            response.setContentType("application/json");
 //            response.setCharacterEncoding("UTF-8");

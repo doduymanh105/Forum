@@ -4,6 +4,8 @@ import com.example.forum.common.constant.AppConstants;
 import com.example.forum.common.constant.MessageConstants;
 import com.example.forum.common.service.cache.CacheService;
 import com.example.forum.common.service.email.EmailService;
+import com.example.forum.core.exception.AppException;
+import com.example.forum.core.exception.ErrorCode;
 import com.example.forum.core.exception.ResourceNotFoundException;
 import com.example.forum.domain.UserEntity;
 import com.example.forum.feature.auth.dto.response.VerifyOtpResponse;
@@ -50,6 +52,9 @@ public class VerificationServiceImpl implements VerificationService {
 
     @Override
     public void resendVerificationCode(String email) {
+
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND));
 
         String attemptKey = AppConstants.PREFIX_VERIFICATION_ATTEMPT+email;
 

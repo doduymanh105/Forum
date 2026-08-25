@@ -41,7 +41,4 @@ public interface UserService {
 
     @PreAuthorize("hasRole('USER') and #id==authentication.principal.userId")
     void changePassword(Long id, ChangePasswordRequest request);
-
-    UserResponseDto updateProfilePicture();
-    UserResponseDto updateUserInfo();
 }
