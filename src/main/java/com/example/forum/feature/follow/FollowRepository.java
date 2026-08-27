@@ -88,4 +88,25 @@ public interface FollowRepository extends JpaRepository<Follow, FollowId> {
 
     @Query("SELECT f.follower.userId FROM Follow f WHERE f.following.userId = :followingId")
     List<Long> findFollowerUserIdByFollowingUserId(Long followingId);
+
+    @Query("""
+            SELECT
+            u.userId as userId,
+            u.userName as userName,
+            u.email as email,
+            u.avatarUrl as avatarUrl
+            FROM UserEntity u
+            WHERE u.userId IN (
+                SELECT f1.id.followingId FROM Follow f1 WHERE f1.id.followerId = :userId
+            )
+            AND u.userId IN (
+                SELECT f2.id.followerId FROM Follow f2 WHERE f2.id.followingId = :userId
+            )
+            AND LOWER(u.userName) LIKE LOWER(CONCAT('%',:keyword,'%'))
+            """)
+    Page<UserSummaryProjection> findMutualFriends(
+
+            @Param("userId") Long currentUserId,
+            @Param("keyword") String searchKeyword,
+            Pageable pageable);
 }

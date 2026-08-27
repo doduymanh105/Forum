@@ -1,0 +1,1 @@
+ALTER TABLE post_entity ADD COLUMN time_read INT DEFAULT 0;

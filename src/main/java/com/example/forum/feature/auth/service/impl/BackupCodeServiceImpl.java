@@ -7,6 +7,7 @@ import com.example.forum.feature.auth.service.BackupCodeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +21,7 @@ public class BackupCodeServiceImpl implements BackupCodeService {
     private final PasswordEncoder passwordEncoder;
 
     @Override
+    @Transactional
     public List<String> generateBackupCode(UserEntity user){
         backupCodeRepository.deleteByUserEntityUserId(user.getUserId());
 
@@ -41,6 +43,7 @@ public class BackupCodeServiceImpl implements BackupCodeService {
         return rawCodeList;
     }
     @Override
+    @Transactional
     public boolean verifyBackupCode(UserEntity user, String code){
         List<BackupCode> BackupCodeEntities = backupCodeRepository.findByUserEntityUserId(user.getUserId());
 

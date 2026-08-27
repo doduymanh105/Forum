@@ -62,7 +62,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final BackupCodeService backupCodeService;
     private final EmailService emailService;
     private final CacheService cacheService;
-    private final CloudinaryService cloudinaryService;
 
     private final AuthenticationManager authManager;
     private final PasswordEncoder passwordEncoder;
@@ -79,6 +78,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             .withZone(ZoneId.systemDefault());
 
     @Override
+    @Transactional
     public UserSummaryDto register(RegisterRequest request) {
 
         if(userRepository.findByEmail(request.getEmail()).isPresent()) {
@@ -213,6 +213,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
+    @Transactional
     public boolean saveUserDevice(UserEntity user, String deviceId, String rawRefreshToken, String ua, String ip){
 
         var existingDevice = userDeviceRepository.findByUserIdAndDeviceId(user.getUserId(), deviceId);
@@ -283,6 +284,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
+    @Transactional
     public void logout(LogoutRequest request, String accessToken){
         String refreshToken = request.getRefreshToken();
 
@@ -331,6 +333,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
+    @Transactional
     public void resetPassword(ResetPasswordRequest request){
         String resetTokenKey = AppConstants.PREFIX_RESET_TOKEN+request.getResetToken();
         UserEntity user = userRepository.findByEmail(request.getEmail())
@@ -361,6 +364,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
+    @Transactional
     public void revokeDevice(UserEntity user, String deviceTargetId){
         UserDevice device = userDeviceRepository.findByUserIdAndDeviceId(user.getUserId(), deviceTargetId)
                 .orElseThrow(() -> new ResourceNotFoundException(MessageConstants.DEVICE_NOT_FOUND));
@@ -378,8 +382,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         );
     }
 
-    @Transactional
+
     @Override
+    @Transactional
     public void revokeAllDevice(UserEntity currentUser){
         userDeviceRepository.revokeAllByUserId(currentUser.getUserId());
         long revocationTime = System.currentTimeMillis();
@@ -391,7 +396,4 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 TimeUnit.SECONDS
         );
     }
-
-
-
 }

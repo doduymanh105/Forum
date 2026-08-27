@@ -9,6 +9,7 @@ import com.example.forum.feature.auth.repository.UserDeviceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -23,6 +24,7 @@ public class DeviceServiceImpl implements DeviceService {
     private final UserDeviceRepository userDeviceRepository;
 
     @Override
+    @Transactional
     public boolean saveUserDevice(UserEntity user, String deviceId, String rawRefreshToken, String ua, String ip){
 
         var existingDevice = userDeviceRepository.findByUserIdAndDeviceId(user.getUserId(), deviceId);

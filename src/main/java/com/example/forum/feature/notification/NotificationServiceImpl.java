@@ -19,6 +19,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -36,6 +38,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final WebsocketNotificationService websocketNotificationService;
 
     @Override
+    @Transactional
     public NotificationEvent createEvent(EventType eventType, UserEntity creator, String description, Long referenceId, String referenceType) {
         String creatorName= creator.displayUsername();
 
@@ -144,24 +147,24 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Transactional
     public void markAsRead(Long notificationId) {
         Notification existingNotification = checkNotificationExist(notificationId);
         existingNotification.setIsRead(true);
-        notificationRepository.save(existingNotification);
     }
 
     @Override
+    @Transactional
     public void markAllAsRead() {
         UserEntity currentUser= securityService.getCurrentUser();
         if (currentUser == null) {
             throw new NotLoggedInException(MessageConstants.LOGIN_REQUIRED);
         }
-        List<Notification> readList =notificationRepository.findAllByUserEntityUserIdAndIsReadFalse(currentUser.getUserId())
-                .stream().peek(n-> n.setIsRead(true)).toList();
-        notificationRepository.saveAll(readList);
+        notificationRepository.markAllAsReadByUserId(currentUser.getUserId());
     }
 
     @Override
+    @Transactional
     public void archiveNotification(Long notificationId) {
         Notification existingNotification = checkNotificationExist(notificationId);
         existingNotification.setIsArchived(true);
@@ -169,6 +172,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Transactional
     public void deleteNotification(Long notificationId) {
         Notification existingNotification = checkNotificationExist(notificationId);
         notificationRepository.delete(existingNotification);
