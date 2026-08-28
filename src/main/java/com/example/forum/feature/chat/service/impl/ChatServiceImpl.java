@@ -1,8 +1,6 @@
 package com.example.forum.feature.chat.service.impl;
 
-
-import com.example.forum.common.constant.MessageConstants;
-import com.example.forum.common.service.cache.RedisService;
+import com.example.forum.common.utils.ChatEventFormatter;
 import com.example.forum.common.utils.SecurityUtils;
 import com.example.forum.core.exception.AppException;
 import com.example.forum.feature.chat.dto.chatRequestDto.CreateGroupChatRequest;
@@ -214,7 +212,7 @@ public class ChatServiceImpl implements ChatService {
         chat.setChatName(request.getChatName());
         chat = chatRepo.save(chat);
 
-        String message = MessageConstants.changeGroupName(currentUser, chat.getChatName());
+        String message = ChatEventFormatter.changeGroupName(currentUser, chat.getChatName());
         chatEventService.processGroupSystemEvent(chat, currentUser,message, ChatEvent.CHANGE_NAME );
         return mapToChatResponse(chatParticipant);
     }
@@ -244,7 +242,7 @@ public class ChatServiceImpl implements ChatService {
         chat.setChatAvatarUrl(uploadImage.getUrl());
         chatRepo.save(chat);
         //TODO: notification to group chat
-        String message = MessageConstants.changeGroupChatAvatar(user);
+        String message = ChatEventFormatter.changeGroupChatAvatar(user);
         chatEventService.processGroupSystemEvent(chat, user,message, ChatEvent.CHANGE_AVATAR );
         return mapToChatResponse(chatParticipant);
     }

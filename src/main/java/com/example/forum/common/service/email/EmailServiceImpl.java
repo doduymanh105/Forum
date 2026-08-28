@@ -1,6 +1,6 @@
 package com.example.forum.common.service.email;
 
-import com.example.forum.common.constant.MessageConstants;
+import com.example.forum.common.constant.AppConstants;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +51,7 @@ public class EmailServiceImpl implements EmailService {
             String htmlContent = template.process("email-otp", context);
 
             helper.setTo(toMail);
-            helper.setSubject(MessageConstants.SUBJECT_OTP_MAIL);
+            helper.setSubject(AppConstants.SUBJECT_OTP_MAIL);
             helper.setText(htmlContent, true);
 
             javaMailSender.send(mimeMessage);
@@ -76,7 +76,7 @@ public class EmailServiceImpl implements EmailService {
 
             String htmlContent = template.process("login-alert", context);
             helper.setTo(toEmail);
-            helper.setSubject(MessageConstants.SUBJECT_NEW_DEVICE_LOGIN);
+            helper.setSubject(AppConstants.SUBJECT_NEW_DEVICE_LOGIN);
             helper.setText(htmlContent, true);
 
             javaMailSender.send(message);

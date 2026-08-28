@@ -1,7 +1,7 @@
 package com.example.forum.feature.follow;
 
-import com.example.forum.common.constant.MessageConstants;
-import com.example.forum.feature.chat.dto.chatResponseDto.CustomPageable;
+import com.example.forum.core.exception.AppException;
+import com.example.forum.core.exception.ErrorCode;
 import com.example.forum.feature.user.UserSummaryProjection;
 import com.example.forum.common.dto.PagedResponse;
 import com.example.forum.feature.user.dto.UserSummaryDto;
@@ -10,8 +10,6 @@ import com.example.forum.domain.Follow;
 import com.example.forum.domain.FollowId;
 import com.example.forum.domain.NotificationEvent;
 import com.example.forum.domain.UserEntity;
-import com.example.forum.core.exception.BadRequestException;
-import com.example.forum.core.exception.ResourceNotFoundException;
 import com.example.forum.feature.user.UserRepository;
 import com.example.forum.common.utils.SecurityUtils;
 import com.example.forum.feature.notification.NotificationService;
@@ -41,13 +39,13 @@ public class FollowServiceImpl implements FollowService {
     public void followUser(Long followingId) {
 
         UserEntity following = userRepository.findById(followingId)
-                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND));
 
         UserEntity follower = securityService.getCurrentUser(); // user
         Long currentFollowerId= follower.getUserId();
 
         if(currentFollowerId==followingId){
-            throw new BadRequestException(MessageConstants.CANT_FOLLOW_YOURSELF);
+            throw new AppException(ErrorCode.CANT_FOLLOW_YOURSELF);
         }
 
         FollowId followId = new FollowId(currentFollowerId, followingId);
@@ -55,7 +53,7 @@ public class FollowServiceImpl implements FollowService {
             Follow newFollow = new Follow(followId,follower,following, LocalDateTime.now());
             followRepository.save(newFollow);
         } else {
-            throw new BadRequestException(MessageConstants.ALREADY_FOLLOWED);
+            throw new AppException(ErrorCode.ALREADY_FOLLOWED);
         }
 
         NotificationEvent newNotificationEvent = notificationService.createEvent(
@@ -156,7 +154,7 @@ public class FollowServiceImpl implements FollowService {
             Follow existFollow= existingFollowId.get();
             followRepository.delete(existFollow);
         } else  {
-            throw new BadRequestException(MessageConstants.HAVE_NOT_FOLLOW);
+            throw new AppException(ErrorCode.HAVE_NOT_FOLLOW);
         }
     }
 
@@ -175,7 +173,7 @@ public class FollowServiceImpl implements FollowService {
         if (existingFollow.isPresent()) {
             followRepository.delete(existingFollow.get());
         } else {
-            throw new BadRequestException(MessageConstants.USER_HAVE_NOT_FOLLOW);
+            throw new AppException(ErrorCode.USER_HAVE_NOT_FOLLOW);
         }
     }
 
@@ -199,6 +197,6 @@ public class FollowServiceImpl implements FollowService {
 
     private UserEntity getUserOrThrow(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
     }
 }

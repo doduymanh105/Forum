@@ -1,10 +1,8 @@
 package com.example.forum.core.exception;
 
-import com.example.forum.common.constant.MessageConstants;
 import com.example.forum.common.dto.ApiResponse;
 import io.jsonwebtoken.ExpiredJwtException;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.protocol.HTTP;
 import org.springframework.ai.openai.api.common.OpenAiApiClientErrorException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -131,11 +129,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<?> handleMaxUploadSizeException(MaxUploadSizeExceededException maxUploadSizeExceededException){
+
+        ErrorCode errorCode = ErrorCode.UPLOAD_LIMIT_EXCEEDED;
+
+        ApiResponse<Void> apiResponse = new ApiResponse<>();
+        apiResponse.setCode(errorCode.getStatus().value());
+        apiResponse.setMessage(errorCode.getMessage());
+
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
-                .body(ApiResponse.error(
-                        HttpStatus.PAYLOAD_TOO_LARGE.value(),
-                        MessageConstants.UPLOAD_LIMIT_EXCEEDED
-                ));
+                .body(apiResponse);
     }
 
     @ExceptionHandler(AppException.class)

@@ -1,14 +1,14 @@
 package com.example.forum.feature.user;
 
-import com.example.forum.common.constant.MessageConstants;
 import com.example.forum.common.utils.SecurityUtils;
+import com.example.forum.core.exception.AppException;
+import com.example.forum.core.exception.ErrorCode;
 import com.example.forum.feature.user.dto.ChangePasswordRequest;
 import com.example.forum.feature.user.dto.UserUpdateRequest;
 import com.example.forum.common.dto.PagedResponse;
 import com.example.forum.feature.user.dto.UserResponseDto;
 import com.example.forum.domain.FollowId;
 import com.example.forum.domain.UserEntity;
-import com.example.forum.core.exception.ResourceNotFoundException;
 import com.example.forum.feature.follow.FollowRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -54,9 +54,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponseDto getUserInfor(Long targetUserid) {
         UserEntity user = userRepository.findById(targetUserid)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         if(user.getIsDeleted()) {
-            throw new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND);
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
         }
         int followerCount = followRepository.countFollowers(targetUserid);
         int followingCount = followRepository.countFollowings(targetUserid);
@@ -115,7 +115,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponseDto updateUser(Long id, UserUpdateRequest request) {
         UserEntity user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         if(request.getAvatarUrl()!= null && !request.getAvatarUrl().isBlank()){
             user.setAvatarUrl(request.getAvatarUrl());
@@ -130,7 +130,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void softDeleteUser(Long id) {
         UserEntity user = userRepository.findById(id)
-                .orElseThrow(()-> new IllegalArgumentException(MessageConstants.USER_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND));
         user.setIsDeleted(true);
     }
 
@@ -138,7 +138,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void hardDeleteUser(Long id) {
         UserEntity user= userRepository.findById(id)
-                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND));
         userRepository.delete(user);
     }
 
@@ -146,9 +146,9 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void changePassword(Long id, ChangePasswordRequest request) {
         UserEntity user = userRepository.findById(id)
-                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND));
         if(!passwordEncoder.matches(request.getOldPassword(), user.getUserPassword())) {
-            throw new IllegalArgumentException(MessageConstants.OLD_PASSWORD_INCORRECT);
+            throw new AppException(ErrorCode.OLD_PASSWORD_INCORRECT);
         }
         user.setUserPassword(passwordEncoder.encode(request.getNewPassword()));
     }

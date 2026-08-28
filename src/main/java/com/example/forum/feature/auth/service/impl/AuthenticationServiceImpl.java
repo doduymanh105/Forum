@@ -1,23 +1,19 @@
 package com.example.forum.feature.auth.service.impl;
 
 import com.example.forum.common.constant.AppConstants;
-import com.example.forum.common.constant.MessageConstants;
 import com.example.forum.common.service.cache.CacheService;
 import com.example.forum.common.service.email.EmailService;
+import com.example.forum.core.exception.*;
 import com.example.forum.feature.auth.dto.request.LogoutRequest;
 import com.example.forum.feature.auth.dto.request.ResetPasswordRequest;
 import com.example.forum.feature.auth.dto.response.AuthenticationResponse;
 import com.example.forum.feature.auth.dto.response.UserDeviceResponse;
 import com.example.forum.feature.auth.repository.UserDeviceRepository;
 import com.example.forum.feature.auth.service.*;
-import com.example.forum.feature.media.CloudinaryService;
 import com.example.forum.feature.user.dto.UserSummaryDto;
 import com.example.forum.feature.auth.dto.response.VerifyOtpResponse;
 import com.example.forum.domain.Enum.DeviceStatus;
 import com.example.forum.domain.UserDevice;
-import com.example.forum.core.exception.EmailAlreadyExistsException;
-import com.example.forum.core.exception.OtpVerificationException;
-import com.example.forum.core.exception.ResourceNotFoundException;
 import com.example.forum.core.security.jwt.JWTService;
 import com.example.forum.feature.auth.dto.request.AuthenticationRequest;
 import com.example.forum.feature.auth.dto.request.RegisterRequest;
@@ -30,12 +26,10 @@ import com.example.forum.common.utils.RequestUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -82,15 +76,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public UserSummaryDto register(RegisterRequest request) {
 
         if(userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new EmailAlreadyExistsException(MessageConstants.EMAIL_ALREADY_EXISTS);
+            throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
         if(request.getPassword()==null){
-            throw new IllegalArgumentException(MessageConstants.PASSWORD_REQUIRED);
+            throw new AppException(ErrorCode.PASSWORD_REQUIRED);
         }
 
         Role userRole = roleRepository.findByName(AppConstants.ROLE_USER)
-                .orElseThrow(()-> new RuntimeException(MessageConstants.ROLE_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.ROLE_NOT_FOUND));
 
         String finalAvatarUrl =AppConstants.DEFAULT_AVATAR_URL;
         if(request.getAvatarUrl() != null && !request.getAvatarUrl().isEmpty()){
@@ -124,11 +118,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
 
         if(loginAttemptService.isLocked(request.getEmail())){
-            throw new ResponseStatusException(HttpStatus.LOCKED,MessageConstants.ACCOUNT_LOCKED_DUE_TO_OVER_ATTEMPTS);
+            throw new AppException(ErrorCode.ACCOUNT_LOCKED_DUE_TO_OVER_ATTEMPTS);
         }
 
         var user = userRepository.findByEmail(request.getEmail())
-                 .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, MessageConstants.USER_NOT_FOUND));
+                 .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND));
 
 
         try {
@@ -141,17 +135,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             loginAttemptService.loginSucceeded(request.getEmail());
         } catch (BadCredentialsException ex) {
             loginAttemptService.loginFail(request.getEmail());
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,MessageConstants.LOGIN_FAILED);
+            throw new AppException(ErrorCode.LOGIN_FAILED);
         } catch (DisabledException ex){
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,MessageConstants.ACCOUNT_NOT_VERIFIED);
+            throw new AppException(ErrorCode.ACCOUNT_NOT_VERIFIED);
         } catch (LockedException ex) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,MessageConstants.ACCOUNT_LOCKED );
+            throw new AppException(ErrorCode.ACCOUNT_LOCKED);
         }
 
         if (user.isTwoFactorEnabled()) {
             return AuthenticationResponse.builder()
                     .requiresTwoFactor(true)
-                    .message(MessageConstants.REQUIRE_TWO_FACTOR_AUTHENTICATION)
+                    .message(AppConstants.REQUIRE_TWO_FACTOR_AUTHENTICATION)
                     .build();
         }
         return finalizeLogin(user, request.getDeviceId());
@@ -160,10 +154,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public AuthenticationResponse verifyTwoFactorLogin(String email, String otpCode, String deviceId){
         UserEntity user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         if (!user.isTwoFactorEnabled()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,MessageConstants.TWO_FACTOR_NOT_ENABLED);
+            throw new AppException(ErrorCode.TWO_FACTOR_NOT_ENABLED);
         }
 
         boolean isValid = false;
@@ -177,7 +171,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
 
         if (!isValid) {
-            throw new OtpVerificationException(MessageConstants.OTP_INVALID);
+            throw new AppException(ErrorCode.OTP_INVALID);
         }
 
         return finalizeLogin(user, deviceId);
@@ -243,28 +237,28 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public AuthenticationResponse refreshToken(String rawRefreshToken) {
 
         if (rawRefreshToken== null || rawRefreshToken.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, MessageConstants.MISSING_REFRESH_TOKEN);
+            throw new AppException(ErrorCode.MISSING_REFRESH_TOKEN);
         }
         String hashedInputToken = TokenUtils.hashToken(rawRefreshToken);
 
         String redisKey = AppConstants.PREFIX_BLACKLIST_REFRESH_TOKEN + hashedInputToken;
         if (cacheService.hasKey(redisKey)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,MessageConstants.REFRESH_TOKEN_INVALID_REVOKED);
+            throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID_REVOKED);
         }
 
         UserDevice userDevice = userDeviceRepository.findByRefreshTokenHash(hashedInputToken)
-                .orElseThrow(()-> new ResponseStatusException(HttpStatus.FORBIDDEN, MessageConstants.REFRESH_TOKEN_INVALID));
+                .orElseThrow(()-> new AppException(ErrorCode.REFRESH_TOKEN_INVALID));
 
         if(userDevice.getExpiresAt().isBefore(Instant.now())){
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, MessageConstants.REFRESH_TOKEN_EXPIRED);
+            throw new AppException(ErrorCode.REFRESH_TOKEN_EXPIRED);
         }
 
         if (userDevice.getStatus() != DeviceStatus.ACTIVE) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, MessageConstants.REFRESH_TOKEN_INVALID_REVOKED);
+            throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID_REVOKED);
         }
 
         UserEntity user = userRepository.findById(userDevice.getUserId())
-                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, MessageConstants.USER_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND));
 
         userDevice.setLastActiveAt(Instant.now());
         userDeviceRepository.save(userDevice);
@@ -328,7 +322,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public void forgotPassword(String email){
         UserEntity user = userRepository.findByEmail(email)
-                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND));
         verificationService.sendVerificationEmail(user);
     }
 
@@ -337,7 +331,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public void resetPassword(ResetPasswordRequest request){
         String resetTokenKey = AppConstants.PREFIX_RESET_TOKEN+request.getResetToken();
         UserEntity user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND));
 
         Object storedEmail = cacheService.get(resetTokenKey);
 
@@ -346,7 +340,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             userRepository.save(user);
             cacheService.delete(resetTokenKey);
         } else {
-            throw new IllegalArgumentException(MessageConstants.INVALID_RESET_PASSWORD_TOKEN);
+            throw new AppException(ErrorCode.INVALID_RESET_PASSWORD_TOKEN);
         }
     }
 
@@ -367,7 +361,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Transactional
     public void revokeDevice(UserEntity user, String deviceTargetId){
         UserDevice device = userDeviceRepository.findByUserIdAndDeviceId(user.getUserId(), deviceTargetId)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageConstants.DEVICE_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND));
 
         device.setStatus(DeviceStatus.REVOKED);
         userDeviceRepository.save(device);

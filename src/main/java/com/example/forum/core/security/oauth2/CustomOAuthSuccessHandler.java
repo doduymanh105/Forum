@@ -1,8 +1,9 @@
 package com.example.forum.core.security.oauth2;
 
-import com.example.forum.common.constant.MessageConstants;
 import com.example.forum.common.service.email.EmailService;
 import com.example.forum.common.utils.RequestUtils;
+import com.example.forum.core.exception.AppException;
+import com.example.forum.core.exception.ErrorCode;
 import com.example.forum.core.security.jwt.JWTService;
 import com.example.forum.domain.UserEntity;
 import com.example.forum.feature.auth.service.DeviceService;
@@ -18,7 +19,6 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import java.io.IOException;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Formatter;
 import java.util.UUID;
@@ -49,7 +49,7 @@ public class CustomOAuthSuccessHandler implements AuthenticationSuccessHandler {
             String name = oAuth2User.getAttribute("name");
             String sub = oAuth2User.getName();
 
-            UserEntity user = userRepository.findByProviderAndProviderId(provider, sub).orElseThrow(() -> new RuntimeException(MessageConstants.USER_NOT_FOUND));
+            UserEntity user = userRepository.findByProviderAndProviderId(provider, sub).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
             String deviceId = "oauth2-" + provider + "-" + user.getUserId();
             String token = jwtService.generateAccessToken(user,deviceId);

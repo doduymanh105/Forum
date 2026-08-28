@@ -1,11 +1,10 @@
 package com.example.forum.feature.auth.service.impl;
 
 import com.example.forum.common.constant.AppConstants;
-import com.example.forum.common.constant.MessageConstants;
 import com.example.forum.common.service.cache.RedisService;
+import com.example.forum.core.exception.AppException;
+import com.example.forum.core.exception.ErrorCode;
 import com.example.forum.domain.UserEntity;
-import com.example.forum.core.exception.OtpVerificationException;
-import com.example.forum.core.exception.ResourceNotFoundException;
 import com.example.forum.feature.auth.dto.response.TwoFactorResponse;
 import com.example.forum.feature.auth.repository.BackupCodeRepository;
 import com.example.forum.feature.auth.service.BackupCodeService;
@@ -71,7 +70,7 @@ public class TwoFactorServiceImpl implements TwoFactorService {
     @Override
     public TwoFactorResponse enableTwoFactor(String email){
         UserEntity user = userRepository.findByEmail(email)
-                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND));
 
         String secret = generateNewSecret();
         String qrUrl = generateQrCodeUri(secret, email);
@@ -87,19 +86,19 @@ public class TwoFactorServiceImpl implements TwoFactorService {
     @Transactional
     public List<String> verifyOtp(String email, int otp){
         UserEntity user = userRepository.findByEmail(email)
-                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND));
 
         String keyTemp2fa = AppConstants.PREFIX_TEMP_2FA + email;
 
         Object storedSecret = redisService.get(keyTemp2fa);
         if (storedSecret == null) {
-            throw new ResourceNotFoundException(MessageConstants.CODE_2FA_EXPIRED_TRY_AGAIN);
+            throw new AppException(ErrorCode.CODE_2FA_EXPIRED);
         }
 
         String secretStr = storedSecret.toString();
         boolean result = isOtpValid(secretStr,otp);
         if (!result) {
-            throw new OtpVerificationException(MessageConstants.OTP_INVALID);
+            throw new AppException(ErrorCode.OTP_INVALID);
         }
         if(!user.isTwoFactorEnabled()){
             user.setTwoFactorEnabled(true);
