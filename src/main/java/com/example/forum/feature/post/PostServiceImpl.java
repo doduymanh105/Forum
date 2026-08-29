@@ -1,6 +1,5 @@
 package com.example.forum.feature.post;
 
-import com.example.forum.common.constant.MessageConstants;
 import com.example.forum.common.dto.CursorResponse;
 import com.example.forum.common.dto.PagedResponse;
 import com.example.forum.core.exception.AppException;
@@ -14,7 +13,6 @@ import com.example.forum.feature.media.dto.UploadResponseDto;
 import com.example.forum.feature.post.dto.*;
 import com.example.forum.domain.*;
 import com.example.forum.domain.Enum.EventType;
-import com.example.forum.core.exception.ResourceNotFoundException;
 import com.example.forum.domain.Enum.MediaType;
 import com.example.forum.feature.tag.TagRepository;
 import com.example.forum.feature.tag.dto.TagDto;
@@ -69,7 +67,7 @@ public class PostServiceImpl implements PostService {
         moderationService.validateContentStrictly(request.getPostTitle(), request.getPostContent());
 
         UserEntity creator = userRepo.findById(userId)
-                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND));
 
 //        Set<Category> categories = new HashSet<>(categoryRepo.findAllById(request.getCategoryIds()));
         Set<Tag> tags= new HashSet<>(tagRepo.findAllById(request.getTagIds()));
@@ -111,18 +109,18 @@ public class PostServiceImpl implements PostService {
     @Transactional
     public void removeMediaFromPost(Long postId, Long mediaId) {
         PostEntity post = postRepo.findById(postId)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.POST_NOT_FOUND));
 
         UserEntity currentUser = securityService.getCurrentUser();
         if (!post.getCreator().getUserId().equals(currentUser.getUserId())) {
-            throw new AccessDeniedException(MessageConstants.NO_PERMISSION_TO_DELETE_MEDIA);
+            throw new AppException(ErrorCode.NO_PERMISSION_TO_DELETE_MEDIA);
         }
 
         MediaEntity mediaEntity = mediaRepository.findById(mediaId)
-                        .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.MEDIA_NOT_FOUND));
+                        .orElseThrow(()-> new AppException(ErrorCode.MEDIA_NOT_FOUND));
 
         if (!mediaEntity.getPost().getPostId().equals(postId)) {
-            throw new IllegalArgumentException(MessageConstants.MEDIA_NOT_BELONG_TO_POST);
+            throw new AppException(ErrorCode.MEDIA_NOT_BELONG_TO_POST);
         }
 
         String publicIdToDelete = mediaEntity.getPublicId();
@@ -159,15 +157,15 @@ public class PostServiceImpl implements PostService {
     @Transactional
     public PostResponseDto addMediaToPost(Long postId, List<MultipartFile> files) {
         PostEntity post = postRepo.findById(postId)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.POST_NOT_FOUND));
 
         UserEntity currentUser = securityService.getCurrentUser();
         if (!post.getCreator().getUserId().equals(currentUser.getUserId())) {
-            throw new AccessDeniedException(MessageConstants.NO_PERMISSION_EDIT_POST);
+            throw new AppException(ErrorCode.NO_PERMISSION_EDIT_POST);
         }
 
         if (files == null || files.isEmpty()) {
-            throw new IllegalArgumentException(MessageConstants.FILE_EMPTY);
+            throw new AppException(ErrorCode.FILE_EMPTY);
         }
 
         List<UploadResponseDto> mediaInfo = cloudinaryService.uploadImages(files);
@@ -182,7 +180,7 @@ public class PostServiceImpl implements PostService {
     public String getSummaryForPost(Long postId) {
 
         PostEntity post = postRepo.findByPostId(postId)
-                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.POST_NOT_FOUND));
 
         if (post.getSummary() != null && !post.getSummary().trim().isEmpty()) {
             return post.getSummary();
@@ -258,7 +256,7 @@ public class PostServiceImpl implements PostService {
     public PostResponseDto getPost(Long postId) {
         UserEntity currentUser = securityService.getCurrentUser();
         PostEntity post= postRepo.findById(postId)
-                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.POST_NOT_FOUND));
         return mapToPostResponseDto(post, currentUser, true);
     }
 
@@ -267,7 +265,7 @@ public class PostServiceImpl implements PostService {
         if (keyword == null) {
             keyword = "";
         }
-        UserEntity owner = userRepo.findById(userId).orElseThrow(()->new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND));
+        UserEntity owner = userRepo.findById(userId).orElseThrow(()->new AppException(ErrorCode.USER_NOT_FOUND));
 
         UserEntity currentUser = securityService.getCurrentUserOrNull();
 
@@ -400,17 +398,17 @@ public class PostServiceImpl implements PostService {
     public PostResponseDto updatePost(Long postId, UpdatePostRequest request) {
 
         PostEntity post = postRepo.findByPostId(postId)
-                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.POST_NOT_FOUND));
 
         if(post.getIsArchived()){
-            throw new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND);
+            throw new AppException(ErrorCode.POST_NOT_FOUND);
         }
 
         UserEntity currentUser = securityService.getCurrentUser();  // dùng service
         Long currentUserId = currentUser.getUserId();
 
         if(!post.getCreator().getUserId().equals(currentUserId)) {
-            throw new AccessDeniedException(MessageConstants.NO_PERMISSION_EDIT_POST);
+            throw new AppException(ErrorCode.NO_PERMISSION_EDIT_POST);
         }
 
         if(request.getTitle() !=null && !request.getTitle().isBlank()) {
@@ -438,17 +436,17 @@ public class PostServiceImpl implements PostService {
     @Transactional
     public void softDeletePost(Long id) {
         PostEntity post= postRepo.findByPostId(id)
-                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.POST_NOT_FOUND));
 
         if(post.getIsArchived()){
-            throw new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND);
+            throw new AppException(ErrorCode.POST_NOT_FOUND);
         }
 
         UserEntity currentUser = securityService.getCurrentUser();
         Long currentUserId = currentUser.getUserId();
 
         if(!currentUserId.equals(post.getCreator().getUserId())) {
-            throw new AccessDeniedException(MessageConstants.NO_PERMISSION_EDIT_POST);
+            throw new AppException(ErrorCode.NO_PERMISSION_EDIT_POST);
         }
         post.setIsArchived(true);
         postRepo.save(post);
@@ -458,7 +456,7 @@ public class PostServiceImpl implements PostService {
     @Transactional
     public void hardDeletePost(Long id) {
         PostEntity post= postRepo.findByPostId(id)
-                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.POST_NOT_FOUND));
         postRepo.delete(post);
     }
 

@@ -1,8 +1,8 @@
 package com.example.forum.feature.comment;
 
-import com.example.forum.common.constant.MessageConstants;
 import com.example.forum.common.utils.SecurityUtils;
-import com.example.forum.core.exception.ResourceNotFoundException;
+import com.example.forum.core.exception.AppException;
+import com.example.forum.core.exception.ErrorCode;
 import com.example.forum.domain.CommentEntity;
 import com.example.forum.domain.CommentVote;
 import com.example.forum.domain.Enum.EventType;
@@ -36,7 +36,7 @@ public class CommentVoteServiceImpl implements CommentVoteService{
         UserEntity user = securityUtils.getCurrentUser();
 
         CommentEntity commentEntity = commentRepository.findById(commentId)
-                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.COMMENT_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.COMMENT_NOT_FOUND));
 
         Optional<CommentVote> existingVoteOpt = commentVoteRepository.findByCommentIdAndUserId(commentId,user.getUserId());
 

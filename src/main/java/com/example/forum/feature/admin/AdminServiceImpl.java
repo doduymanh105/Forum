@@ -1,7 +1,8 @@
 package com.example.forum.feature.admin;
 
 import com.example.forum.common.constant.AppConstants;
-import com.example.forum.common.constant.MessageConstants;
+import com.example.forum.core.exception.AppException;
+import com.example.forum.core.exception.ErrorCode;
 import com.example.forum.feature.user.dto.UserSummaryDto;
 import com.example.forum.feature.auth.dto.request.RegisterRequest;
 import com.example.forum.domain.Role;
@@ -25,11 +26,11 @@ public class AdminServiceImpl implements AdminService {
     public UserSummaryDto createAdmin(RegisterRequest request) {
 
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new IllegalArgumentException(MessageConstants.EMAIL_ALREADY_EXISTS);
+            throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
         Role adminRole = roleRepository.findByName(AppConstants.ROLE_ADMIN)
-                .orElseThrow(() -> new IllegalArgumentException(MessageConstants.ROLE_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
 
         UserEntity admin = new UserEntity();
         admin.setUserName(request.getUserName());

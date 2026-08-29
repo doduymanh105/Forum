@@ -1,16 +1,15 @@
 package com.example.forum.feature.comment;
 
-import com.example.forum.common.constant.MessageConstants;
 import com.example.forum.common.dto.CursorResponse;
 import com.example.forum.common.dto.PagedResponse;
-import com.example.forum.domain.Enum.VoteType;
+import com.example.forum.core.exception.AppException;
+import com.example.forum.core.exception.ErrorCode;
 import com.example.forum.feature.comment.dto.*;
 import com.example.forum.domain.CommentEntity;
 import com.example.forum.domain.Enum.EventType;
 import com.example.forum.domain.NotificationEvent;
 import com.example.forum.domain.PostEntity;
 import com.example.forum.domain.UserEntity;
-import com.example.forum.core.exception.ResourceNotFoundException;
 import com.example.forum.feature.post.PostRepository;
 import com.example.forum.feature.user.UserRepository;
 import com.example.forum.common.utils.SecurityUtils;
@@ -21,13 +20,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -50,11 +46,11 @@ public class CommentServiceImpl implements CommentService {
         // 2. Orphaned Images Cleanup: Add a @Scheduled job to delete uploaded files that are not linked in the 'comments' table.
 
         PostEntity post= postRepository.findByPostId(postId)
-                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.POST_NOT_FOUND));
 
         UserEntity currentUser = securityService.getCurrentUser();
         UserEntity user = userRepository.findById(currentUser.getUserId())
-                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND));
 
         CommentEntity comment= CommentEntity.builder()
                 .postEntity(post)
@@ -72,7 +68,7 @@ public class CommentServiceImpl implements CommentService {
             comment.setParentId(null);
         } else {
             CommentEntity parentComment = commentRepository.findById(request.getParentId())
-                    .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.COMMENT_NOT_FOUND));
+                    .orElseThrow(()-> new AppException(ErrorCode.COMMENT_NOT_FOUND));
             comment.setParentId(request.getParentId());
             newPath = request.getParentPath() + request.getParentId() +"/";
         }
@@ -109,7 +105,7 @@ public class CommentServiceImpl implements CommentService {
                     "COMMENT"
             );
             CommentEntity parentComment = commentRepository.findById(request.getParentId())
-                    .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.COMMENT_NOT_FOUND));
+                    .orElseThrow(()-> new AppException(ErrorCode.COMMENT_NOT_FOUND));
             if(!postOwner.getUserId().equals(currentUser.getUserId())){
                 notificationService.notifySpecificUser(post.getCreator(), notificationEvent);
             }
@@ -129,7 +125,7 @@ public class CommentServiceImpl implements CommentService {
         Long currentUserId = securityService.getCurrentUser().getUserId();
 
         if (!postRepository.existsById(postId)) {
-            throw new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND);
+            throw new AppException(ErrorCode.POST_NOT_FOUND);
         }
 
         Pageable pageable = PageRequest.ofSize(size+1);
@@ -210,13 +206,13 @@ public class CommentServiceImpl implements CommentService {
     @Transactional
     public CommentDto updateComment(Long commentId, UpdateCommentRequest request) {
         CommentEntity comment = commentRepository.findByCommentIdAndIsDeletedFalse(commentId)
-                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.COMMENT_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.COMMENT_NOT_FOUND));
 
         UserEntity currentUser = securityService.getCurrentUser();
         Long currentUserId = currentUser.getUserId();
 
         if(currentUserId != comment.getUserEntity().getUserId()) {
-            throw new AccessDeniedException(MessageConstants.EDIT_OWN_COMMENT);
+            throw new AppException(ErrorCode.EDIT_OWN_COMMENT);
         }
 
         comment.setCommentContent(request.getUpdatedContent());
@@ -229,7 +225,7 @@ public class CommentServiceImpl implements CommentService {
     @Transactional
     public void softDeletedComment(Long commentId) {
         CommentEntity comment = commentRepository.findByCommentIdAndIsDeletedFalse(commentId)
-                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.COMMENT_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.COMMENT_NOT_FOUND));
 
         PostEntity post = comment.getPostEntity();
 
@@ -237,7 +233,7 @@ public class CommentServiceImpl implements CommentService {
         Long currentUserId = currentUser.getUserId();
 
         if(currentUserId != comment.getUserEntity().getUserId()) {
-            throw new AccessDeniedException(MessageConstants.EDIT_OWN_COMMENT);
+            throw new AppException(ErrorCode.EDIT_OWN_COMMENT);
         }
         comment.setIsDeleted(true);
         postRepository.decrementCommentCount(post.getPostId());
@@ -248,13 +244,13 @@ public class CommentServiceImpl implements CommentService {
     @Transactional
     public void hardDeletedComment(Long commentId) {
         CommentEntity comment = commentRepository.findByCommentIdAndIsDeletedFalse(commentId)
-                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.COMMENT_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.COMMENT_NOT_FOUND));
 
         UserEntity currentUser = securityService.getCurrentUser();
         Long currentUserId = currentUser.getUserId();
 
         if(currentUserId != comment.getUserEntity().getUserId()) {
-            throw new AccessDeniedException(MessageConstants.EDIT_OWN_COMMENT);
+            throw new AppException(ErrorCode.EDIT_OWN_COMMENT);
         }
         commentRepository.delete(comment);
     }
@@ -268,7 +264,7 @@ public class CommentServiceImpl implements CommentService {
         Pageable pageable = PageRequest.of(pageIndex, size);
 
         if (!postRepository.existsById(postId)) {
-            throw new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND);
+            throw new AppException(ErrorCode.POST_NOT_FOUND);
         }
 
         Page<CommentProjection> pageCommentProjection = commentRepository.findChildCommentsWithReplyCountByPostId(postId, parentId, currentUserId, pageable);
@@ -292,7 +288,7 @@ public class CommentServiceImpl implements CommentService {
         UserEntity user = securityService.getCurrentUser();
 
         CommentEntity commentEntity = commentRepository.findById(commentId)
-                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.COMMENT_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.COMMENT_NOT_FOUND));
 
         List<Long> relatedCommentIds= new ArrayList<>();
         String commentPath= commentEntity.getCommentPath();

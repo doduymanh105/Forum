@@ -1,6 +1,7 @@
 package com.example.forum.feature.vote;
 
-import com.example.forum.common.constant.MessageConstants;
+import com.example.forum.core.exception.AppException;
+import com.example.forum.core.exception.ErrorCode;
 import com.example.forum.feature.vote.dto.PostVoteResponse;
 import com.example.forum.domain.Enum.EventType;
 import com.example.forum.domain.NotificationEvent;
@@ -8,7 +9,6 @@ import com.example.forum.domain.PostEntity;
 import com.example.forum.domain.UserEntity;
 import com.example.forum.domain.Vote;
 import com.example.forum.domain.Enum.VoteType;
-import com.example.forum.core.exception.ResourceNotFoundException;
 import com.example.forum.feature.post.PostRepository;
 import com.example.forum.common.utils.SecurityUtils;
 import com.example.forum.feature.notification.NotificationService;
@@ -33,7 +33,7 @@ public class VoteServiceImpl implements VoteService {
     public PostVoteResponse votePost(Long postId, VoteType newVote) {
 
         PostEntity post = postRepository.findByPostId(postId)
-                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.POST_NOT_FOUND));
 
         UserEntity currentUser = securityService.getCurrentUser();
         Long currentUserId= currentUser.getUserId();
@@ -79,7 +79,7 @@ public class VoteServiceImpl implements VoteService {
     @Override
     public List<VoteProjection> findVoteOfPost(Long postId, VoteType voteType) {
         PostEntity post = postRepository.findByPostId(postId)
-                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.POST_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.POST_NOT_FOUND));
         return voteRepository.findVotesOfPost(postId, voteType.name());
     }
 

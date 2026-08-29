@@ -1,12 +1,10 @@
 package com.example.forum.feature.auth.service.impl;
 
 import com.example.forum.common.constant.AppConstants;
-import com.example.forum.common.constant.MessageConstants;
 import com.example.forum.common.service.cache.CacheService;
 import com.example.forum.common.service.email.EmailService;
 import com.example.forum.core.exception.AppException;
 import com.example.forum.core.exception.ErrorCode;
-import com.example.forum.core.exception.ResourceNotFoundException;
 import com.example.forum.domain.UserEntity;
 import com.example.forum.feature.auth.dto.response.VerifyOtpResponse;
 import com.example.forum.feature.auth.service.VerificationService;
@@ -62,7 +60,7 @@ public class VerificationServiceImpl implements VerificationService {
         int attempts = (attemptObj == null) ? 0 : Integer.parseInt(attemptObj.toString());
 
         if(attempts >= verificationMaxAttempts) {
-            throw new IllegalArgumentException(MessageConstants.OTP_LIMIT_REACHED);
+            throw new AppException(ErrorCode.OTP_LIMIT_REACHED);
         }
 
         String newToken= String.format("%06d", new Random().nextInt(AppConstants.OTP_GENERATION_BOUND));
@@ -82,17 +80,17 @@ public class VerificationServiceImpl implements VerificationService {
     @Override
     public VerifyOtpResponse verifyToken (String email, String inputToken) {
         UserEntity user = userRepository.findByEmail(email)
-                .orElseThrow(()-> new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND));
+                .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND));
 
         String key = AppConstants.PREFIX_VERIFICATION_OTP+email;
 
         if (!redisService.hasKey(key)) {
-            throw new IllegalArgumentException(MessageConstants.OTP_INVALID);
+            throw new AppException(ErrorCode.OTP_INVALID);
         }
 
         Object verificationToken = redisService.get(key);
         if(!verificationToken.toString().equals(inputToken)) {
-            throw new IllegalArgumentException(MessageConstants.WRONG_OTP_CODE);
+            throw new AppException(ErrorCode.WRONG_OTP_CODE);
         }
 
         if (!user.getIsVerified()) {

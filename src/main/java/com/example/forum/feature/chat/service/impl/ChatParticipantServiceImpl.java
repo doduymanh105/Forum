@@ -1,6 +1,6 @@
 package com.example.forum.feature.chat.service.impl;
 
-import com.example.forum.common.constant.MessageConstants;
+import com.example.forum.common.utils.ChatEventFormatter;
 import com.example.forum.common.utils.SecurityUtils;
 import com.example.forum.core.exception.AppException;
 import com.example.forum.feature.chat.dto.chatRequestDto.ChangeRoleRequest;
@@ -66,7 +66,7 @@ public class ChatParticipantServiceImpl implements ChatParticipantService {
         chatParticipantRepo.saveAll(newAddedMember);
 
 
-        String systemContent = MessageConstants.addMemberMessage(currentUser, userList);
+        String systemContent = ChatEventFormatter.addMemberMessage(currentUser, userList);
 
         // notify inside chat
         // notify new participant about participate new chat
@@ -138,7 +138,7 @@ public class ChatParticipantServiceImpl implements ChatParticipantService {
         targetMember.setRole(request.getRole());
         chatParticipantRepo.save(targetMember);
 
-        String systemContent = MessageConstants.roleUpdateMessage(actor,targetMember.getUserEntity(), request.getRole());
+        String systemContent = ChatEventFormatter.roleUpdateMessage(actor,targetMember.getUserEntity(), request.getRole());
         chatEventService.processGroupSystemEvent(
                 currentUserParticipant.getChat(),
                 currentUserParticipant.getUserEntity(),
@@ -220,7 +220,7 @@ public class ChatParticipantServiceImpl implements ChatParticipantService {
         targetUserParticipant.setDeletedBy(currentUserId);
         chatParticipantRepo.save(targetUserParticipant);
 
-        String systemContent = MessageConstants.kickMessage(currentUserParticipant.getUserEntity(), targetUserParticipant.getUserEntity());
+        String systemContent = ChatEventFormatter.kickMessage(currentUserParticipant.getUserEntity(), targetUserParticipant.getUserEntity());
         chatEventService.processGroupSystemEvent(
                 currentUserParticipant.getChat(),
                 currentUserParticipant.getUserEntity(),
@@ -248,7 +248,7 @@ public class ChatParticipantServiceImpl implements ChatParticipantService {
         chatParticipantRepo.save(currentUserParticipant);
 
         UserEntity actor = currentUserParticipant.getUserEntity();
-        String systemContent = MessageConstants.leaveChatMessage(actor);
+        String systemContent = ChatEventFormatter.leaveChatMessage(actor);
 
         chatEventService.processGroupSystemEvent(currentUserParticipant.getChat(), actor, systemContent, ChatEvent.LEAVE);
     }

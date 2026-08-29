@@ -51,6 +51,10 @@ public final class AppConstants {
     public static final int DEFAULT_DAYS = 300;
     public static final int TAG_JOB_SCHEDULE = 1800000;
 
+    public static final String SUBJECT_OTP_MAIL = "Your verification code (OTP)";
+    public static final String SUBJECT_NEW_DEVICE_LOGIN = "Security Alert: New Login Detected";
+    public static final String OTP_SENT_SUCCESS = "OTP has been sent to your email.";
+    public static final String REQUIRE_TWO_FACTOR_AUTHENTICATION = "Two-factor authentication is required";
 
 
 }

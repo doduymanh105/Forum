@@ -3,8 +3,8 @@ package com.example.forum.feature.media;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.example.forum.common.constant.AppConstants;
-import com.example.forum.common.constant.MessageConstants;
-import com.example.forum.core.exception.BadRequestException;
+import com.example.forum.core.exception.AppException;
+import com.example.forum.core.exception.ErrorCode;
 import com.example.forum.feature.media.dto.UploadResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -70,17 +70,17 @@ public class CloudinaryServiceImpl implements CloudinaryService {
         } catch (IOException e){
 
             log.error("Cloudinary upload error: {}", e.getMessage());
-            throw new RuntimeException(MessageConstants.UPLOAD_FAILED, e);
+            throw new AppException(ErrorCode.UPLOAD_FAILED);
         }
     }
 
     @Override
     public List<UploadResponseDto> uploadImages(List<MultipartFile> files) {
         if(files == null || files.isEmpty()){
-            throw new BadRequestException(MessageConstants.FILE_EMPTY);
+            throw new AppException(ErrorCode.FILE_EMPTY);
         }
         if(files.size()>maxFileSize){
-            throw new BadRequestException(MessageConstants.MAX_BATCH_SIZE_EXCEEDED);
+            throw new AppException(ErrorCode.MAX_BATCH_SIZE_EXCEEDED);
         }
 
         log.info("Starting batch upload for {} files...", files.size());
@@ -104,11 +104,11 @@ public class CloudinaryServiceImpl implements CloudinaryService {
     private void validateFile(MultipartFile file){
 
         if (file == null || file.isEmpty()) {
-            throw new BadRequestException(MessageConstants.FILE_EMPTY);
+            throw new AppException(ErrorCode.FILE_EMPTY);
         }
 
         if (file.getSize() > maxFileSize) { // 5MB
-            throw new BadRequestException(MessageConstants.FILE_TOO_LARGE);
+            throw new AppException(ErrorCode.FILE_TOO_LARGE);
         }
 
         String originalFilename = file.getOriginalFilename();
@@ -117,12 +117,12 @@ public class CloudinaryServiceImpl implements CloudinaryService {
             extension = originalFilename.substring(originalFilename.lastIndexOf(".") + 1).toLowerCase();
         }
         if (!AppConstants.ALLOWED_IMAGE_EXTENSIONS.contains(extension)) {
-            throw new BadRequestException(MessageConstants.FILE_EXTENSION_NOT_SUPPORTED);
+            throw new AppException(ErrorCode.FILE_EXTENSION_NOT_SUPPORTED);
         }
 
         String contentType = file.getContentType();
         if (contentType == null || !AppConstants.ALLOWED_IMAGE_MIME_TYPES.contains(contentType)) {
-            throw new BadRequestException(MessageConstants.FILE_NOT_VALID_IMAGE);
+            throw new AppException(ErrorCode.FILE_NOT_VALID_IMAGE);
         }
     }
 }

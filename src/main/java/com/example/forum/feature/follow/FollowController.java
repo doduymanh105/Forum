@@ -107,7 +107,7 @@ public class FollowController {
     @RateLimit(capacity = 100, time = 1)
     @GetMapping("/friends")
     ResponseEntity<ApiResponse<PagedResponse<UserSummaryDto>>> getFriends(
-            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "") String keyword
     ){
