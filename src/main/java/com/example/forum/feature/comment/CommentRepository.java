@@ -190,4 +190,6 @@ public interface CommentRepository extends JpaRepository<CommentEntity, Long> {
             @Param("commentIds") List<Long> commentIds,
             @Param("currentUserId") Long currentUserId
     );
+
+    Long countByIsDeletedFalse();
 }

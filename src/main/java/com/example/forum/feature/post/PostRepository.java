@@ -86,4 +86,6 @@ public interface PostRepository extends JpaRepository<PostEntity, Long>, JpaSpec
             @Param("cursorId") Long cursorId,
             Pageable pageable
     );
+
+    Long countByIsArchivedFalse();
 }
