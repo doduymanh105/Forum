@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -88,4 +90,31 @@ public interface PostRepository extends JpaRepository<PostEntity, Long>, JpaSpec
     );
 
     Long countByIsArchivedFalse();
+
+    @Query(value = """
+            SELECT TO_CHAR(created_at, 'YYYY-MM-DD') as dateStr,
+            COUNT(*) as totalCount
+            FROM post_entity
+            WHERE created_at >= :startDate
+            AND created_at <= :endDate
+            AND is_archived = false
+            GROUP BY TO_CHAR(created_at, 'YYYY-MM-DD')
+            ORDER BY dateStr ASC
+            """, nativeQuery = true)
+    List<Object[]> countPostsGroupedByDate(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
+
+    @Query(value = """
+            SELECT p.*
+            FROM post_entity p
+            WHERE p.created_at <= :endDate
+            AND p.created_At >= :startDate
+            ORDER BY (COALESCE(p.upvotes, 0) * 2 + COALESCE(p.comment_count, 0) * 5) DESC            LIMIT 5
+            """, nativeQuery = true)
+    List<PostEntity> findTopPosts(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
 }

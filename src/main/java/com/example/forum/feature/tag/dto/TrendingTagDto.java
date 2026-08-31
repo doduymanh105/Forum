@@ -12,4 +12,5 @@ public class TrendingTagDto {
     private Long tagId;
     private String tagName;
     private Long totalScore;
+    private Long totalPost;
 }

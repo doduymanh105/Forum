@@ -7,11 +7,9 @@ import com.example.forum.feature.tag.dto.TrendingTagDto;
 import com.example.forum.feature.tag.dto.TrendingTagResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @io.swagger.v3.oas.annotations.tags.Tag(name = "Tag API")

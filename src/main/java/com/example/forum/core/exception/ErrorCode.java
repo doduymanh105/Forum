@@ -110,14 +110,10 @@ public enum ErrorCode {
 
     POST_CONTENT_MIN_LENGTH(HttpStatus.BAD_REQUEST, "Post content is too short."),
     POST_CONTENT_MAX_LENGTH(HttpStatus.BAD_REQUEST, "Post content is too long."),
-    POST_CONTENT_TOXIC(HttpStatus.BAD_REQUEST, "Post content is toxic.")
+    POST_CONTENT_TOXIC(HttpStatus.BAD_REQUEST, "Post content is toxic."),
 
 
-
-
-
-
-    ;
+    TIME_CONFLICT(HttpStatus.CONFLICT,"Time conflict" );
 
 
     private final HttpStatus status;

@@ -506,6 +506,7 @@ public class PostServiceImpl implements PostService {
             List<PostEntity> posts,
             UserEntity currentUser,
             boolean singlePost
+// TODO:            ??? singlePost in mapToList
     ){
         List<Long> postIds = posts.stream().map(PostEntity::getPostId).toList();
         List<MediaEntity> allMedia = mediaRepository.findByPostPostIdIn(postIds);

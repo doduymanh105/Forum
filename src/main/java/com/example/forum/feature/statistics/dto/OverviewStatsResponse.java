@@ -1,4 +1,4 @@
-package com.example.forum.feature.statistics;
+package com.example.forum.feature.statistics.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

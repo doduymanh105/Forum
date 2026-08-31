@@ -4,4 +4,5 @@ public interface TrendingTagProjection {
     Long getTagId();
     String getTagName();
     Long getTotalScore();
+    Long getTotalPost();
 }
