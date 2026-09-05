@@ -113,7 +113,10 @@ public enum ErrorCode {
     POST_CONTENT_TOXIC(HttpStatus.BAD_REQUEST, "Post content is toxic."),
 
 
-    TIME_CONFLICT(HttpStatus.CONFLICT,"Time conflict" );
+    TIME_CONFLICT(HttpStatus.CONFLICT,"Time conflict" ),
+
+    INVALID_PLATFORM_URL(HttpStatus.BAD_REQUEST,"Invalid platform url")
+    ;
 
 
     private final HttpStatus status;

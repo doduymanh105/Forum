@@ -15,7 +15,7 @@ public interface UserService {
     UserResponseDto getCurrentUser(UserEntity userEntity);
 
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
-    UserResponseDto getUserInfor(Long id);
+    UserResponseDto getUserInfo(Long id);
 
 
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
@@ -33,7 +33,7 @@ public interface UserService {
             String keyword
     );
 
-    @PreAuthorize("hasRole('USER') and #id==authentication.principal.userId")
+    @PreAuthorize("hasAnyRole('USER','ADMIN') and #id==authentication.principal.userId")
     UserResponseDto updateUser(Long id, UserUpdateRequest request);
 
     @PreAuthorize("hasRole('ADMIN')")

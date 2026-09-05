@@ -46,13 +46,15 @@ public class UserServiceImpl implements UserService {
                 .userName(user.displayUsername())
                 .avatarUrl(user.getAvatarUrl())
                 .roles(user.getRoles())
+                .bio(user.getBio())
+                .socialPlatforms(user.getSocialLinks())
                 .isVerified(user.getIsVerified())
                 .createdAt(user.getCreatedAt())
                 .build();
     }
 
     @Override
-    public UserResponseDto getUserInfor(Long targetUserid) {
+    public UserResponseDto getUserInfo(Long targetUserid) {
         UserEntity user = userRepository.findById(targetUserid)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         if(user.getIsDeleted()) {
@@ -122,6 +124,17 @@ public class UserServiceImpl implements UserService {
         }
         if (request.getUsername()!=null && !request.getUsername().isBlank()) {
             user.setUserName(request.getUsername());
+        }
+        if (request.getBio()!=null && !request.getBio().isBlank()) {
+            user.setBio(request.getBio());
+        }
+        if(request.getSocialLinks()!= null && !request.getSocialLinks().isEmpty()){
+            request.getSocialLinks().forEach((socialPlatform, url) ->{
+                if(!socialPlatform.isValidUrl(url)){
+                    throw new AppException(ErrorCode.INVALID_PLATFORM_URL);
+                }
+            } );
+            user.setSocialLinks(request.getSocialLinks());
         }
         return mapToUserResponseDto(user);
     }
