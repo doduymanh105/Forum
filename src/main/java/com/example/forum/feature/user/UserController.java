@@ -8,6 +8,7 @@ import com.example.forum.feature.user.dto.UserUpdateRequest;
 import com.example.forum.common.dto.ApiResponse;
 import com.example.forum.domain.UserEntity;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -39,7 +40,7 @@ public class UserController {
         return ResponseEntity.ok(
                 ApiResponse.success(
                 "get user by id",
-                        userService.getUserInfor(id)
+                        userService.getUserInfo(id)
         ));
     }
 
@@ -83,7 +84,7 @@ public class UserController {
     @PatchMapping("/{id}/update")
     public ResponseEntity<ApiResponse<UserResponseDto>> updateUser(
             @PathVariable Long id,
-            @RequestBody UserUpdateRequest request
+            @Valid @RequestBody UserUpdateRequest request
     ) {
         return ResponseEntity.ok(ApiResponse.success(
                 "Update user successfully!",
