@@ -57,4 +57,12 @@ public final class AppConstants {
     public static final String REQUIRE_TWO_FACTOR_AUTHENTICATION = "Two-factor authentication is required";
 
 
+    // POST CACHE
+    public static final String CACHE_NULL_VALUE = "NOT_FOUND";
+    public static final int NULL_CACHE_TTL = 30;
+    public static final int NORMAL_CACHE_TTL = 60;
+    public static final int MAX_JITTER_MINUTES = 10;
+    public static final String POST_DETAIL_KEY ="post:detail:";
+
+
 }
