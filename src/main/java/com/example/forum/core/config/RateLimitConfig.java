@@ -2,8 +2,13 @@ package com.example.forum.core.config;
 
 import io.github.bucket4j.distributed.ExpirationAfterWriteStrategy;
 import io.github.bucket4j.distributed.proxy.ClientSideConfig;
+import io.github.bucket4j.distributed.proxy.ProxyManager;
 import io.github.bucket4j.redis.lettuce.cas.LettuceBasedProxyManager;
+import io.github.bucket4j.redis.redisson.cas.RedissonBasedProxyManager;
 import io.lettuce.core.RedisClient;
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.command.CommandAsyncExecutor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -15,19 +20,18 @@ import java.time.Duration;
 public class RateLimitConfig {
 
     @Bean
-    public LettuceBasedProxyManager<byte[]> proxyManager(RedisConnectionFactory redisConnectionFactory){
+    public ProxyManager<String> proxyManager(RedissonClient redissonClient){
 
-        LettuceConnectionFactory lettuce = (LettuceConnectionFactory) redisConnectionFactory;
-
-        RedisClient redisClient =(RedisClient) lettuce.getNativeClient();
+        CommandAsyncExecutor commandExecutor = ((Redisson) redissonClient).getCommandExecutor();
 
         ClientSideConfig config = ClientSideConfig.getDefault()
                 .withExpirationAfterWriteStrategy(
                         ExpirationAfterWriteStrategy.basedOnTimeForRefillingBucketUpToMax(Duration.ofMinutes(10))
                 );
-
-        return LettuceBasedProxyManager.builderFor(redisClient)
+        return RedissonBasedProxyManager.builderFor(commandExecutor)
                 .withClientSideConfig(config)
                 .build();
     }
+
+
 }

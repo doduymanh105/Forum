@@ -48,7 +48,7 @@ public class PostController {
 
     }
 
-    @RateLimit(capacity = 100, time = 1)
+//    @RateLimit(capacity = 100, time = 1)
     @GetMapping("/{postId}")
     public ResponseEntity<ApiResponse<PostResponseDto>> getPostById(@PathVariable Long postId) {
         return ResponseEntity.ok(

@@ -56,7 +56,8 @@ public class SecurityConfig {
                                 ,"/login/oauth2/**",
                                 "/oauth2/**",
                                 "/forum/upload/avatar",
-                                "/ws/**"
+                                "/ws/**",
+                                "/forum/posts/**"
                         )
                         .permitAll()
                         .requestMatchers("/forum/admin/**").hasRole("ADMIN")
