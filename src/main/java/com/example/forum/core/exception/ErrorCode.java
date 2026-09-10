@@ -115,8 +115,12 @@ public enum ErrorCode {
 
     TIME_CONFLICT(HttpStatus.CONFLICT,"Time conflict" ),
 
-    INVALID_PLATFORM_URL(HttpStatus.BAD_REQUEST,"Invalid platform url")
-    ;
+    INVALID_PLATFORM_URL(HttpStatus.BAD_REQUEST,"Invalid platform url"),
+    SERVER_BUSY(HttpStatus.SERVICE_UNAVAILABLE, "The system is currently busy, please try again later."),
+    SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected system error occurred, please try again later." );
+
+
+
 
 
     private final HttpStatus status;

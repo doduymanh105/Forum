@@ -1,7 +1,10 @@
 package com.example.forum.feature.post;
 
+import com.example.forum.common.constant.AppConstants;
 import com.example.forum.common.dto.CursorResponse;
 import com.example.forum.common.dto.PagedResponse;
+import com.example.forum.common.service.cache.CacheService;
+import com.example.forum.common.utils.TimeUtils;
 import com.example.forum.core.exception.AppException;
 import com.example.forum.core.exception.ErrorCode;
 import com.example.forum.feature.ai.ContentModerationService;
@@ -23,6 +26,8 @@ import com.example.forum.common.utils.SecurityUtils;
 import com.example.forum.feature.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -30,12 +35,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.sql.Time;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -56,6 +63,8 @@ public class PostServiceImpl implements PostService {
     private final CloudinaryService cloudinaryService;
     private final GenerativeAiService generativeAiService;
     private final ContentModerationService moderationService;
+    private final CacheService cacheService;
+    private final RedissonClient redissonClient;
 
     @Override
     @Transactional
@@ -252,12 +261,62 @@ public class PostServiceImpl implements PostService {
 
 
     @Override
-    @Cacheable(value = "postDetail", key = "#postId")
     public PostResponseDto getPost(Long postId) {
-        UserEntity currentUser = securityService.getCurrentUser();
-        PostEntity post= postRepo.findById(postId)
-                .orElseThrow(()-> new AppException(ErrorCode.POST_NOT_FOUND));
-        return mapToPostResponseDto(post, currentUser, true);
+
+        String cacheKey = AppConstants.POST_DETAIL_KEY + postId;
+        PostResponseDto responseDto;
+
+        Object postCached = cacheService.get(cacheKey);
+
+        if(postCached != null){
+            if(AppConstants.CACHE_NULL_VALUE.equalsIgnoreCase(postCached.toString())){
+                throw new AppException(ErrorCode.POST_NOT_FOUND);
+            }
+            responseDto = (PostResponseDto) postCached;
+        } else {
+            String lockey = "lock:post:"+postId;
+            RLock lock = redissonClient.getLock(lockey);
+            try{
+            if(lock.tryLock(3, 10, TimeUnit.SECONDS)){
+                try{
+                    postCached = cacheService.get(cacheKey);
+                    if (postCached != null) {
+                        if (AppConstants.CACHE_NULL_VALUE.equalsIgnoreCase(postCached.toString())) {
+                            throw new AppException(ErrorCode.POST_NOT_FOUND);
+                        }
+                        responseDto = (PostResponseDto) postCached;
+                    } else {
+                        PostEntity post = postRepo.findById(postId).
+                                orElseThrow(()->{
+                                    cacheService.set(cacheKey, AppConstants.CACHE_NULL_VALUE, AppConstants.NULL_CACHE_TTL, TimeUnit.SECONDS);
+                                    throw new AppException(ErrorCode.POST_NOT_FOUND);
+                                });
+                        responseDto = mapToPostResponseDto(post, null, true);
+                        long finalPostTtl = TimeUtils.generateJitterTtl(AppConstants.NORMAL_CACHE_TTL, AppConstants.MAX_JITTER_MINUTES);
+                        cacheService.set(cacheKey, responseDto, finalPostTtl, TimeUnit.MINUTES);
+                    }
+                } finally {
+                    lock.unlock();
+                }
+            } else {
+                throw new AppException(ErrorCode.SERVER_BUSY );
+            }
+            } catch (InterruptedException e){
+                Thread.currentThread().interrupt();
+                throw new AppException(ErrorCode.SERVER_ERROR);
+            }
+        }
+
+        UserEntity currentUser = securityService.getCurrentUserOrNull();
+
+        if(currentUser!= null){
+            Optional<Vote> voteOpt = voteRepository.findByUserEntityUserIdAndPostEntityPostId(currentUser.getUserId(), postId);
+            responseDto.setIsVoted(voteOpt.map(v -> v.getVoteType().toString()).orElse(null));
+
+            boolean isSaved = postCollectionRepository.existsByUserIdAndPostId(currentUser.getUserId(), postId);
+            responseDto.setIsSaved(isSaved);
+        }
+        return responseDto;
     }
 
     @Override
@@ -393,9 +452,9 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    @CacheEvict(value = "postDetail", key = "#postId")
     @Transactional
     public PostResponseDto updatePost(Long postId, UpdatePostRequest request) {
+        String postCacheKey = AppConstants.POST_DETAIL_KEY+ postId;
 
         PostEntity post = postRepo.findByPostId(postId)
                 .orElseThrow(()-> new AppException(ErrorCode.POST_NOT_FOUND));
@@ -426,15 +485,17 @@ public class PostServiceImpl implements PostService {
 
         postRepo.save(post);
 
+        cacheService.delete(postCacheKey);
+
         return mapToPostResponseDto(post, currentUser, true);
     }
 
 
 
     @Override
-    @CacheEvict(value = "postDetail", key = "#id")
     @Transactional
     public void softDeletePost(Long id) {
+        String postCacheKey = AppConstants.POST_DETAIL_KEY+ id;
         PostEntity post= postRepo.findByPostId(id)
                 .orElseThrow(()-> new AppException(ErrorCode.POST_NOT_FOUND));
 
@@ -450,6 +511,8 @@ public class PostServiceImpl implements PostService {
         }
         post.setIsArchived(true);
         postRepo.save(post);
+
+        cacheService.delete(postCacheKey);
     }
 
     @Override

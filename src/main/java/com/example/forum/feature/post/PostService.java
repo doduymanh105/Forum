@@ -14,7 +14,7 @@ public interface PostService {
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     PostResponseDto createPost(CreatePostRequest request);
 
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+//    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     PostResponseDto getPost(Long postId);
 
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
