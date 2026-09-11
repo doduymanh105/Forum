@@ -5,15 +5,13 @@ import com.example.forum.core.exception.RateLimitExceededException;
 import com.example.forum.domain.UserEntity;
 import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.ConsumptionProbe;
-import io.github.bucket4j.redis.lettuce.cas.LettuceBasedProxyManager;
+import io.github.bucket4j.distributed.proxy.ProxyManager;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -26,7 +24,7 @@ import java.util.function.Supplier;
 @RequiredArgsConstructor
 public class RateLimitInterceptor implements HandlerInterceptor {
 
-    private final LettuceBasedProxyManager<byte[]> proxyManager;
+    private final ProxyManager<String> proxyManager;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -49,7 +47,7 @@ public class RateLimitInterceptor implements HandlerInterceptor {
                 .build();
 
         var bucket = proxyManager.builder()
-                .build(key.getBytes(),configSupplier );
+                .build(key,configSupplier );
 
         ConsumptionProbe consumptionProbe = bucket.tryConsumeAndReturnRemaining(1);
 
