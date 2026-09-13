@@ -3,10 +3,12 @@ package com.example.forum.feature.auth.service.impl;
 import com.example.forum.common.constant.AppConstants;
 import com.example.forum.common.service.cache.CacheService;
 import com.example.forum.common.service.email.EmailService;
+import com.example.forum.core.config.RabbitMqConfig;
 import com.example.forum.core.exception.*;
 import com.example.forum.feature.auth.dto.request.LogoutRequest;
 import com.example.forum.feature.auth.dto.request.ResetPasswordRequest;
 import com.example.forum.feature.auth.dto.response.AuthenticationResponse;
+import com.example.forum.feature.auth.dto.response.DeviceLoginMessage;
 import com.example.forum.feature.auth.dto.response.UserDeviceResponse;
 import com.example.forum.feature.auth.repository.UserDeviceRepository;
 import com.example.forum.feature.auth.service.*;
@@ -25,6 +27,7 @@ import com.example.forum.core.security.jwt.TokenUtils;
 import com.example.forum.common.utils.RequestUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -60,6 +63,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final AuthenticationManager authManager;
     private final PasswordEncoder passwordEncoder;
     private final JWTService jwtService;
+    private final RabbitTemplate rabbitTemplate;
 
     @Value("${app.refresh-token.expiration}")
     private long refreshTokenExpirationTime;
@@ -188,7 +192,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         boolean isNewDevice =saveUserDevice(user, deviceId, rawRefreshToken, userAgent, ip);
         if (isNewDevice){
-            emailService.sendAlertNewDeviceLogin(user.getEmail(), userAgent, ip, formatter.format(Instant.now()));
+            DeviceLoginMessage deviceLoginMessage = new DeviceLoginMessage(
+                    user.getEmail(),
+                    userAgent,
+                    ip,
+                    formatter.format(Instant.now())
+            );
+            rabbitTemplate.convertAndSend(RabbitMqConfig.NOTIFICATION_EXCHANGE, RabbitMqConfig.ALERT_ROUTING_KEY, deviceLoginMessage);
         }
 
         var jwtAccessToken = jwtService.generateAccessToken(user, deviceId);
