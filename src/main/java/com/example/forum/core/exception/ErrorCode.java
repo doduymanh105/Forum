@@ -117,7 +117,9 @@ public enum ErrorCode {
 
     INVALID_PLATFORM_URL(HttpStatus.BAD_REQUEST,"Invalid platform url"),
     SERVER_BUSY(HttpStatus.SERVICE_UNAVAILABLE, "The system is currently busy, please try again later."),
-    SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected system error occurred, please try again later." );
+    SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected system error occurred, please try again later." ),
+    UNCATEGORIZED_EXCEPTION(HttpStatus.SERVICE_UNAVAILABLE,"Server busy" ),
+    RESEND_AFTER_60_SECONDS(HttpStatus.BAD_REQUEST, "Try after 60s" );
 
 
 

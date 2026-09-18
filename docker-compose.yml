@@ -24,6 +24,19 @@ services:
     networks:
       - forum-net
 
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: forum-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: unless-stopped
+
   forum-app:
     build: "."
     container_name: forum-backend
@@ -43,5 +56,6 @@ services:
 
 volumes:
   forum-db-data:
+  rabbitmq_data:
 networks:
   forum-net:
