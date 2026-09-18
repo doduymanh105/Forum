@@ -1,0 +1,1 @@
+ALTER TABLE public.post_entity ALTER COLUMN thumbnail TYPE text;

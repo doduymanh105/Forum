@@ -119,7 +119,8 @@ public enum ErrorCode {
     SERVER_BUSY(HttpStatus.SERVICE_UNAVAILABLE, "The system is currently busy, please try again later."),
     SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected system error occurred, please try again later." ),
     UNCATEGORIZED_EXCEPTION(HttpStatus.SERVICE_UNAVAILABLE,"Server busy" ),
-    RESEND_AFTER_60_SECONDS(HttpStatus.BAD_REQUEST, "Try after 60s" );
+    RESEND_AFTER_60_SECONDS(HttpStatus.BAD_REQUEST, "Try after 60s" ),
+    EVENT_NOT_FOUND(HttpStatus.NOT_FOUND, "Event not found" );
 
 
 
