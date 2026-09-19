@@ -26,6 +26,9 @@ public class RabbitMqConfig {
     public static final String DEAD_LETTER_QUEUE = "email.otp.dlq";
     public static final String DEAD_LETTER_ROUTING_KEY = "email.otp.dlq.key";
 
+    public static final String POST_FANOUT_EXCHANGE = "forum.post.fanout.exchange";
+    public static final String NOTIFICATION_QUEUE = "post.notification.queue";
+
     @Bean
     public DirectExchange deadLetterExchange() {
         return new DirectExchange(DEAD_LETTER_EXCHANGE);
@@ -72,6 +75,25 @@ public class RabbitMqConfig {
         return BindingBuilder.bind(emailQueue)
                 .to(notificationExchange)
                 .with(EMAIL_ROUTING_KEY);
+    }
+
+
+    @Bean
+    public FanoutExchange postFanoutExchange(){
+        return new FanoutExchange(POST_FANOUT_EXCHANGE);
+    }
+
+    @Bean
+    public Queue notificationQueue(){
+        return QueueBuilder
+                .durable(NOTIFICATION_QUEUE)
+                .build();
+    }
+
+    @Bean
+    public Binding bindingNotification(){
+        return BindingBuilder.bind(
+                notificationQueue()).to(postFanoutExchange());
     }
 
     @Bean

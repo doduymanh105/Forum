@@ -28,7 +28,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -39,8 +38,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.sql.Time;
-import java.time.temporal.ChronoUnit;
+
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -108,8 +106,6 @@ public class PostServiceImpl implements PostService {
                 request.getPostTitle(),
                 post.getPostId(),
                 "POST");
-
-        notificationService.notifyFollowers(newNotificationEvent);
 
         return mapToPostResponseDto(post, currentUser, true);
     }
