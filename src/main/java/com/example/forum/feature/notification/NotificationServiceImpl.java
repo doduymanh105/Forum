@@ -1,21 +1,22 @@
 package com.example.forum.feature.notification;
 
+import com.example.forum.core.config.RabbitMqConfig;
 import com.example.forum.core.exception.AppException;
 import com.example.forum.core.exception.ErrorCode;
+import com.example.forum.feature.notification.dto.FanoutNotificationMessage;
 import com.example.forum.feature.notification.dto.NotificationDto;
 import com.example.forum.common.dto.PagedResponse;
 import com.example.forum.domain.Enum.EventType;
 import com.example.forum.domain.Notification;
 import com.example.forum.domain.NotificationEvent;
 import com.example.forum.domain.UserEntity;
-import com.example.forum.core.exception.NotLoggedInException;
-import com.example.forum.core.exception.ResourceNotFoundException;
 import com.example.forum.feature.chat.repository.EventNotificationRepository;
 import com.example.forum.feature.follow.FollowRepository;
 import com.example.forum.feature.user.UserRepository;
 import com.example.forum.common.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -37,6 +38,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     private final SecurityUtils securityService;
     private final WebsocketNotificationService websocketNotificationService;
+    private final RabbitTemplate rabbitTemplate;
 
     @Override
     @Transactional
@@ -72,30 +74,59 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
 
-    @Override
-    public void notifyFollowers(NotificationEvent event) {
-        if(event.getEventType()== EventType.NEW_POST){
-            Long creatorId = event.getCreatedBy().getUserId();
-            List<Long> followerIdList = followRepository.findFollowerUserIdByFollowingUserId(creatorId);
-            if(followerIdList.isEmpty()) return;
+//    @RabbitListener(queues = RabbitMqConfig.NOTIFICATION_QUEUE)
+//    public void notifyFollowers(FanoutNotificationMessage message) {
+//        log.info("[WORKER] fan-out notification STARTED");
+//        int page =0;
+//        int batchSize = 500;
+//
+//        Page<UserEntity> followersPage;
+//
+//        NotificationEvent notificationEvent = notificationEventRepository.findById(message.eventId())
+//                .orElseThrow(()-> new AppException(ErrorCode.EVENT_NOT_FOUND));
+//
+//        do{
+//            PageRequest pageable = PageRequest.of(page, batchSize);
+//            followersPage = followRepository.findFollowersByAuthorId(message.authorId(), pageable);
+//            if(followersPage.getContent().isEmpty()) break;
+//
+//            List<Notification> newNotificationList= followersPage.getContent().stream()
+//                    .map(follower -> Notification.builder()
+//                            .notificationEvent(notificationEvent)
+//                            .userEntity(follower)
+//                            .isRead(false)
+//                            .isArchived(false)
+//                            .build()
+//                    ).toList();
+//            List<Notification> savedNoti = notificationRepository.saveAll(newNotificationList);
+//            for (Notification noti : savedNoti){
+//                NotificationDto notificationDto = mapSingleToDto(noti);
+//                websocketNotificationService.sendPrivateNotification(noti.getUserEntity().getUserId(), notificationDto);
+//            }
+//            log.info(">>> batch {} ({} users)", page +1, newNotificationList.size());
+//            page++;
+//        } while (followersPage.hasNext());
+//        log.info("[WORKER] fan-out notification COMPLETED");
 
-            List<UserEntity> followers = userRepository.findAllById(followerIdList);
-            List<Notification> newNotificationList= followers.stream()
-                            .map(follower -> Notification.builder()
-                                    .notificationEvent(event)
-                                    .userEntity(follower)
-                                    .isRead(false)
-                                    .isArchived(false)
-                                    .build()
-                            ).toList();
-            List<Notification> savedNoti = notificationRepository.saveAll(newNotificationList);
-
-            for (Notification noti : savedNoti){
-                NotificationDto notificationDto = mapSingleToDto(noti);
-                websocketNotificationService.sendPrivateNotification(noti.getUserEntity().getUserId(), notificationDto);
-            }
-        }
-    }
+//        List<Long> followerIdList = followRepository.findFollowerUserIdByFollowingUserId(message.authorId());
+//        if(followerIdList.isEmpty()) return;
+//
+//        List<UserEntity> followers = userRepository.findAllById(followerIdList);
+//        List<Notification> newNotificationList= followers.stream()
+//                        .map(follower -> Notification.builder()
+//                                .notificationEvent(notificationEvent)
+//                                .userEntity(follower)
+//                                .isRead(false)
+//                                .isArchived(false)
+//                                .build()
+//                        ).toList();
+//        List<Notification> savedNoti = notificationRepository.saveAll(newNotificationList);
+//
+//        for (Notification noti : savedNoti){
+//            NotificationDto notificationDto = mapSingleToDto(noti);
+//            websocketNotificationService.sendPrivateNotification(noti.getUserEntity().getUserId(), notificationDto);
+//        }
+//    }
 
     @Override
     public void notifySpecificUser(UserEntity receiver, NotificationEvent event) {
@@ -245,7 +276,15 @@ public class NotificationServiceImpl implements NotificationService {
     private void dispatchNotification(NotificationEvent event, Long referenceId){
         switch (event.getEventType()) {
             case NEW_POST:
-                this.notifyFollowers(event);
+                FanoutNotificationMessage message = new FanoutNotificationMessage(
+                        event.getEventId(),
+                        event.getCreatedBy().getUserId()
+                );
+                rabbitTemplate.convertAndSend(
+                        RabbitMqConfig.POST_FANOUT_EXCHANGE,
+                        "",
+                        message
+                );
                 break;
 
             case NEW_FOLLOWER:

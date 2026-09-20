@@ -63,8 +63,6 @@ public class FollowServiceImpl implements FollowService {
                 following.getUserId(),
                 "USER");
 
-        notificationService.notifyFollowers(newNotificationEvent);
-
     }
 
     @Override

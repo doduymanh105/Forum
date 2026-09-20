@@ -1,9 +1,11 @@
 package com.example.forum.feature.follow;
 
+import com.example.forum.domain.UserEntity;
 import com.example.forum.feature.user.UserSummaryProjection;
 import com.example.forum.domain.Follow;
 import com.example.forum.domain.FollowId;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -108,5 +110,14 @@ public interface FollowRepository extends JpaRepository<Follow, FollowId> {
 
             @Param("userId") Long currentUserId,
             @Param("keyword") String searchKeyword,
+            Pageable pageable);
+
+    @Query("""
+            SELECT f.follower
+            FROM Follow f
+            WHERE f.following.userId = :authorId
+            """)
+    Page<UserEntity> findFollowersByAuthorId(
+            @Param("authorId") Long authorId,
             Pageable pageable);
 }
