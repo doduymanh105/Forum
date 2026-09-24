@@ -9,6 +9,8 @@ import com.example.forum.domain.UserEntity;
 import com.example.forum.feature.follow.FollowRepository;
 import com.example.forum.feature.notification.dto.FanoutNotificationMessage;
 import com.example.forum.feature.notification.dto.NotificationDto;
+import com.example.forum.feature.notification.dto.PrivateNotificationMessage;
+import com.example.forum.feature.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -29,6 +31,7 @@ public class NotificationWorker {
     private final NotificationRepository notificationRepository;
     private final NotificationEventRepository notificationEventRepository;
     private final WebsocketNotificationService websocketNotificationService;
+    private final UserRepository userRepository;
 
 
     @Transactional
@@ -67,6 +70,31 @@ public class NotificationWorker {
         log.info("[WORKER] fan-out notification COMPLETED");
 
     }
+
+    @Transactional
+    @RabbitListener(queues = RabbitMqConfig.NOTIFICATION_QUEUE)
+    public void notifySpecificUserWorker(PrivateNotificationMessage msg){
+
+        log.info("[WORKER] Processing private notification for User: {}", msg.receiverId());
+
+        NotificationEvent notificationEvent = notificationEventRepository.findById(msg.eventId())
+                .orElseThrow(()-> new AppException(ErrorCode.EVENT_NOT_FOUND));
+        UserEntity receiver = userRepository.findById(msg.receiverId())
+                .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        Notification notification = Notification.builder()
+                .notificationEvent(notificationEvent)
+                .userEntity(receiver)
+                .isRead(false)
+                .isArchived(false)
+                .build();
+
+        Notification savedNotification = notificationRepository.save(notification);
+
+        NotificationDto dto = mapSingleToDto(savedNotification);
+        websocketNotificationService.sendPrivateNotification(receiver.getUserId(), dto);
+    }
+
 
     private NotificationDto mapSingleToDto(Notification n) {
         NotificationEvent e = n.getNotificationEvent();
