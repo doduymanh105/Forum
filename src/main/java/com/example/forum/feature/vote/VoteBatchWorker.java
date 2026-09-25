@@ -8,6 +8,7 @@ import com.example.forum.domain.NotificationEvent;
 import com.example.forum.domain.PostEntity;
 import com.example.forum.domain.UserEntity;
 import com.example.forum.domain.Vote;
+import com.example.forum.feature.follow.dto.PendingNotification;
 import com.example.forum.feature.notification.NotificationService;
 import com.example.forum.feature.post.PostRepository;
 import lombok.RequiredArgsConstructor;
@@ -61,6 +62,8 @@ public class VoteBatchWorker {
         Map<Long, Long> downvoteDeltas = new HashMap<>();
         List<Vote> voteToSave = new ArrayList<>();
         List<Vote> voteToDelete = new ArrayList<>();
+        Map<Long, NotificationEvent> notificationEventMap = new HashMap<>();
+        List<PendingNotification> pendingNotifications = new ArrayList<>();
         
         for(VoteMessage msg : distinctVotes.values()){
             Vote existing = existingVoteMap.get(msg.userId() + "-" + msg.postId());
@@ -113,7 +116,8 @@ public class VoteBatchWorker {
                         pId,
                         "POST");
 
-                notificationService.notifySpecificUser(receiver, newNotificationEvent);
+                pendingNotifications.add(new PendingNotification(msg.postAuthorId(), newNotificationEvent));
+
             }
 
         }
@@ -132,6 +136,9 @@ public class VoteBatchWorker {
             if(upDelta != 0 || downDelta != 0){
                 postRepository.updatePostScores(pId,upDelta,downDelta);
             }
+        }
+        for(PendingNotification pNoti : pendingNotifications){
+            notificationService.notifySpecificUser(UserEntity.builder().userId(pNoti.targetUserId()).build(), pNoti.notificationEvent());
         }
 
         log.info("[WORKER] Completed Vote batch. Save: {}, Delete: {}, Post Updated: {}", voteToSave.size(), voteToDelete.size(), allChangedPostIds.size());

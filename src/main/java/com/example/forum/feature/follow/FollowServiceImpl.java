@@ -1,7 +1,9 @@
 package com.example.forum.feature.follow;
 
+import com.example.forum.core.config.RabbitMqConfig;
 import com.example.forum.core.exception.AppException;
 import com.example.forum.core.exception.ErrorCode;
+import com.example.forum.feature.follow.dto.FollowMessage;
 import com.example.forum.feature.user.UserSummaryProjection;
 import com.example.forum.common.dto.PagedResponse;
 import com.example.forum.feature.user.dto.UserSummaryDto;
@@ -14,6 +16,7 @@ import com.example.forum.feature.user.UserRepository;
 import com.example.forum.common.utils.SecurityUtils;
 import com.example.forum.feature.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +36,7 @@ public class FollowServiceImpl implements FollowService {
     private final FollowRepository followRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final RabbitTemplate rabbitTemplate;
 
     @Override
     @Transactional
@@ -48,20 +52,8 @@ public class FollowServiceImpl implements FollowService {
             throw new AppException(ErrorCode.CANT_FOLLOW_YOURSELF);
         }
 
-        FollowId followId = new FollowId(currentFollowerId, followingId);
-        if(!followRepository.existsById(followId)){
-            Follow newFollow = new Follow(followId,follower,following, LocalDateTime.now());
-            followRepository.save(newFollow);
-        } else {
-            throw new AppException(ErrorCode.ALREADY_FOLLOWED);
-        }
-
-        NotificationEvent newNotificationEvent = notificationService.createEvent(
-                EventType.NEW_FOLLOWER,
-                follower,
-                null,
-                following.getUserId(),
-                "USER");
+        FollowMessage followMessage = new FollowMessage(follower.getUserId(), followingId, follower.displayUsername(), "FOLLOW");
+        rabbitTemplate.convertAndSend(RabbitMqConfig.INTERACTION_EXCHANGE, RabbitMqConfig.FOLLOW_ROUTING_KEY, followMessage);
 
     }
 
@@ -146,14 +138,13 @@ public class FollowServiceImpl implements FollowService {
 
         FollowId followId = new FollowId(currentFollowerId, id);
 
-        Optional<Follow> existingFollowId = followRepository.findById(followId);
-
-        if(existingFollowId.isPresent()){
-            Follow existFollow= existingFollowId.get();
-            followRepository.delete(existFollow);
-        } else  {
-            throw new AppException(ErrorCode.HAVE_NOT_FOLLOW);
-        }
+        FollowMessage followMessage = new FollowMessage(
+                follower.getUserId(),
+                id,
+                follower.displayUsername(),
+                "UNFOLLOW"
+        );
+        rabbitTemplate.convertAndSend(RabbitMqConfig.INTERACTION_EXCHANGE, RabbitMqConfig.FOLLOW_ROUTING_KEY, followMessage);
     }
 
     @Override

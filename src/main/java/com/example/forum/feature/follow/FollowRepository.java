@@ -120,4 +120,6 @@ public interface FollowRepository extends JpaRepository<Follow, FollowId> {
     Page<UserEntity> findFollowersByAuthorId(
             @Param("authorId") Long authorId,
             Pageable pageable);
+
+    List<Follow> findByFollowerUserIdInAndFollowingUserIdIn(List<Long> followerIds, List<Long> followingIds);
 }
