@@ -12,6 +12,7 @@ import com.example.forum.domain.NotificationEvent;
 import com.example.forum.domain.UserEntity;
 import com.example.forum.feature.chat.repository.EventNotificationRepository;
 import com.example.forum.feature.follow.FollowRepository;
+import com.example.forum.feature.notification.dto.PrivateNotificationMessage;
 import com.example.forum.feature.user.UserRepository;
 import com.example.forum.common.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,13 @@ public class NotificationServiceImpl implements NotificationService {
     private final SecurityUtils securityService;
     private final WebsocketNotificationService websocketNotificationService;
     private final RabbitTemplate rabbitTemplate;
+
+
+    private List<EventType> privateEventType = List.of(
+            EventType.NEW_COMMENT,
+            EventType.NEW_VOTE,
+            EventType.NEW_COMMENT_VOTE
+    );
 
     @Override
     @Transactional
@@ -132,17 +140,12 @@ public class NotificationServiceImpl implements NotificationService {
     public void notifySpecificUser(UserEntity receiver, NotificationEvent event) {
         if (receiver == null || event == null) return;
 
-        Notification notification = Notification.builder()
-                .notificationEvent(event)
-                .userEntity(receiver)
-                .isRead(false)
-                .isArchived(false)
-                .build();
+        PrivateNotificationMessage privateNotificationMessage = new PrivateNotificationMessage(
+                event.getEventId(),
+                receiver.getUserId()
+        );
 
-        Notification savedNoti = notificationRepository.save(notification);
-
-        NotificationDto dto = mapSingleToDto(savedNoti);
-        websocketNotificationService.sendPrivateNotification(receiver.getUserId(), dto);
+        rabbitTemplate.convertAndSend(RabbitMqConfig.NOTIFICATION_EXCHANGE, RabbitMqConfig.PRIVATE_NOTI_ROUTING_KEY, privateNotificationMessage);
     }
 
     @Override
@@ -249,7 +252,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .build();
     }
 
-    private String createTargetUrl(EventType eventType, Long referenceId, Long creatorId){
+    public String createTargetUrl(EventType eventType, Long referenceId, Long creatorId){
         String targetUrl="";
         switch (eventType) {
             case NEW_POST:
