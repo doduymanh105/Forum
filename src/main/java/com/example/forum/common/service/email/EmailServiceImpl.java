@@ -24,7 +24,6 @@ public class EmailServiceImpl implements EmailService {
     private final TemplateEngine template;
 
 
-    @Async
     @Override
     public void sendOtpMail(String toMail, String otpCode){
 
@@ -43,11 +42,10 @@ public class EmailServiceImpl implements EmailService {
 
             javaMailSender.send(mimeMessage);
         } catch (MessagingException e){
-            e.printStackTrace();
-        }
+            log.error("Sending mail error: ", e);
+            throw new RuntimeException("Can not send OTP", e);        }
     }
 
-    @Async
     @Override
     public void sendAlertNewDeviceLogin(String toEmail, String userAgent,String ipAddress, String loginTime){
 

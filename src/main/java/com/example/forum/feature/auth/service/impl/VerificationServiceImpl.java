@@ -3,27 +3,35 @@ package com.example.forum.feature.auth.service.impl;
 import com.example.forum.common.constant.AppConstants;
 import com.example.forum.common.service.cache.CacheService;
 import com.example.forum.common.service.email.EmailService;
+import com.example.forum.core.config.RabbitMqConfig;
 import com.example.forum.core.exception.AppException;
 import com.example.forum.core.exception.ErrorCode;
 import com.example.forum.domain.UserEntity;
+import com.example.forum.feature.auth.dto.response.EmailOtpMessage;
 import com.example.forum.feature.auth.dto.response.VerifyOtpResponse;
 import com.example.forum.feature.auth.service.VerificationService;
 import com.example.forum.feature.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class VerificationServiceImpl implements VerificationService {
 
-    private final EmailService emailService;
+//    private final EmailService emailService;
     private final UserRepository userRepository;
     private final CacheService redisService;
+    private final RabbitTemplate rabbitTemplate;
 
     @Value("${app.otp.verification-attempt.window-seconds}")
     private long attemptVerificationWindow; // 15 phuts
@@ -37,6 +45,11 @@ public class VerificationServiceImpl implements VerificationService {
     @Value("${app.redis.verification.temp-token}")
     private int tempTokenExpirationTime;
 
+    private static final long OTP_RESEND_COOLDOWN_SECONDS = 60;
+
+    @Value("${app.redis.otp.resend.cooldown.seconds}")
+    private int otpResendCoolDown; // 60s
+
     @Override
     public void sendVerificationEmail(UserEntity userEntity) {
 
@@ -44,15 +57,36 @@ public class VerificationServiceImpl implements VerificationService {
         redisService.set(AppConstants.PREFIX_VERIFICATION_OTP +userEntity.getEmail(), token, otpExpirationTime, TimeUnit.SECONDS);
         redisService.set(AppConstants.PREFIX_VERIFICATION_ATTEMPT+userEntity.getEmail(), AppConstants.INITIAL_ATTEMPT_VALUE, attemptVerificationWindow, TimeUnit.SECONDS);
 
-        emailService.sendOtpMail(userEntity.getEmail(), token);
+        try{
+            EmailOtpMessage emailOtpMessage = new EmailOtpMessage(userEntity.getEmail(), token);
+            rabbitTemplate.convertAndSend(RabbitMqConfig.NOTIFICATION_EXCHANGE, RabbitMqConfig.EMAIL_ROUTING_KEY, emailOtpMessage);
+        } catch (Exception e){
+            log.error("Error in sending OTP message to RabbitMQ with email {}: {}", userEntity.getEmail(), e.getMessage());
+
+            redisService.delete(AppConstants.PREFIX_VERIFICATION_OTP + userEntity.getEmail());
+            redisService.delete(AppConstants.PREFIX_VERIFICATION_ATTEMPT + userEntity.getEmail());
+
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
     }
 
 
     @Override
     public void resendVerificationCode(String email) {
 
+
         UserEntity user = userRepository.findByEmail(email)
                 .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        String baseKey = AppConstants.PREFIX_VERIFICATION_OTP + email;
+        if(redisService.hasKey(baseKey)){
+            Long oldOtpTtl = redisService.getExpire(baseKey);
+            if (oldOtpTtl != null && oldOtpTtl > otpExpirationTime - otpResendCoolDown) {
+                throw new AppException(
+                        ErrorCode.RESEND_AFTER_60_SECONDS
+                );
+            }
+        }
 
         String attemptKey = AppConstants.PREFIX_VERIFICATION_ATTEMPT+email;
 
@@ -74,7 +108,8 @@ public class VerificationServiceImpl implements VerificationService {
             redisService.setExpire(attemptKey, attemptVerificationWindow, TimeUnit.SECONDS);
         }
 
-        emailService.sendOtpMail(email, newToken);
+        EmailOtpMessage message = new EmailOtpMessage(email, newToken);
+        rabbitTemplate.convertAndSend(RabbitMqConfig.NOTIFICATION_EXCHANGE, RabbitMqConfig.EMAIL_ROUTING_KEY, message);
     }
 
     @Override

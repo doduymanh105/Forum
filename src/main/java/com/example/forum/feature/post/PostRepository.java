@@ -117,4 +117,16 @@ public interface PostRepository extends JpaRepository<PostEntity, Long>, JpaSpec
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate
     );
+
+    @Modifying
+    @Query("""
+        UPDATE PostEntity p
+        SET p.upvotes = p.upvotes + :upDelta,
+            p.downvotes = p.downvotes + :downDelta
+        WHERE p.postId = :postId
+        """)
+    void updatePostScores(
+            @Param("postId") Long pId,
+            @Param("upDelta") Long upDelta,
+            @Param("downDelta") Long downDelta);
 }

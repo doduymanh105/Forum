@@ -7,9 +7,7 @@ import com.example.forum.domain.NotificationEvent;
 import com.example.forum.domain.UserEntity;
 
 public interface NotificationService {
-    NotificationEvent createEvent(EventType eventType, UserEntity creator, String description, Long refereneId, String referenceType);
-
-    void notifyFollowers(NotificationEvent event);
+    NotificationEvent createEvent(EventType eventType, UserEntity creator, String description, Long referenceId, String referenceType);
 
     void notifySpecificUser(UserEntity receiver,NotificationEvent event);
 

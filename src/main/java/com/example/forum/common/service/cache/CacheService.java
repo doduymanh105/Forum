@@ -18,6 +18,8 @@ public interface CacheService {
 
     void setExpire (String key, long timeout, TimeUnit unit);
 
+    Long getExpire(String key);
+
     long addToSet(String key,String value);
 
     long removeFromSet(String key,String value);

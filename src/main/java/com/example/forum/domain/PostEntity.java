@@ -38,7 +38,7 @@ public class PostEntity {
     @Column(name = "post_content", columnDefinition = "TEXT")
     private String postContent;
 
-    @Column(name = "thumbnail")
+    @Column(name = "thumbnail", columnDefinition = "text")
     private String thumbnailUrl;
 
     @Column(name = "upvotes")

@@ -48,6 +48,11 @@ public class RedisService implements CacheService {
     }
 
     @Override
+    public Long getExpire(String key) {
+        return redisTemplate.getExpire(key);
+    }
+
+    @Override
     public long addToSet(String key, String value) {
         Long result = redisTemplate.opsForSet().add(key, value);
         return result == null ? 0 : result;
