@@ -16,6 +16,8 @@ public interface CacheService {
 
     long increment(String key);
 
+    long increment(String key, long delta);
+
     void setExpire (String key, long timeout, TimeUnit unit);
 
     Long getExpire(String key);

@@ -1,5 +1,6 @@
 package com.example.forum.feature.follow;
 
+import com.example.forum.common.service.cache.CacheService;
 import com.example.forum.core.config.RabbitMqConfig;
 import com.example.forum.core.exception.AppException;
 import com.example.forum.core.exception.ErrorCode;
@@ -7,14 +8,11 @@ import com.example.forum.feature.follow.dto.FollowMessage;
 import com.example.forum.feature.user.UserSummaryProjection;
 import com.example.forum.common.dto.PagedResponse;
 import com.example.forum.feature.user.dto.UserSummaryDto;
-import com.example.forum.domain.Enum.EventType;
 import com.example.forum.domain.Follow;
 import com.example.forum.domain.FollowId;
-import com.example.forum.domain.NotificationEvent;
 import com.example.forum.domain.UserEntity;
 import com.example.forum.feature.user.UserRepository;
 import com.example.forum.common.utils.SecurityUtils;
-import com.example.forum.feature.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.domain.Page;
@@ -24,8 +22,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,8 +35,9 @@ public class FollowServiceImpl implements FollowService {
     private final SecurityUtils securityService;
     private final FollowRepository followRepository;
     private final UserRepository userRepository;
-    private final NotificationService notificationService;
+
     private final RabbitTemplate rabbitTemplate;
+    private final CacheService cacheService;
 
     @Override
     @Transactional
@@ -118,15 +119,33 @@ public class FollowServiceImpl implements FollowService {
     }
 
     @Override
-    public int getNumberOfFollower(Long followingId) {
-        getUserOrThrow(followingId);
-        return followRepository.countFollowers(followingId);
+    public int getNumberOfFollower(Long targetId) {
+
+        String cachedKey= "user:" + targetId + ":followers";
+        Object cachedCount = cacheService.get(cachedKey);
+
+        if(cachedCount != null)
+            return Integer.parseInt(cachedCount.toString());
+
+        getUserOrThrow(targetId);
+        int numberOfFollower = followRepository.countFollowers(targetId);
+        cacheService.set(cachedKey, String.valueOf(numberOfFollower), 1, TimeUnit.HOURS);
+        return numberOfFollower;
     }
 
     @Override
-    public int getNumberOfFollowing(Long followerId) {
-        getUserOrThrow(followerId);
-        return followRepository.countFollowings(followerId);
+    public int getNumberOfFollowing(Long targetId) {
+        String cachedKey= "user:" + targetId + ":following";
+
+        Object cachedCount = cacheService.get(cachedKey);
+
+        if(cachedCount != null)
+            return Integer.parseInt(cachedCount.toString());
+
+        getUserOrThrow(targetId);
+        int numberOfFollowing = followRepository.countFollowings(targetId);
+        cacheService.set(cachedKey, String.valueOf(numberOfFollowing), 1, TimeUnit.HOURS);
+        return numberOfFollowing;
     }
 
     @Override

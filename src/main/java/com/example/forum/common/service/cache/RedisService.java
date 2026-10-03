@@ -43,6 +43,11 @@ public class RedisService implements CacheService {
     }
 
     @Override
+    public long increment(String key, long delta) {
+        return redisTemplate.opsForValue().increment(key, delta);
+    }
+
+    @Override
     public void setExpire (String key, long timeout, TimeUnit unit){
         redisTemplate.expire(key, timeout, unit);
     }
