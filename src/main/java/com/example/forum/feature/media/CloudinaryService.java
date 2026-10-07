@@ -1,11 +1,15 @@
 package com.example.forum.feature.media;
 
+import com.example.forum.feature.media.dto.SignatureResponse;
 import com.example.forum.feature.media.dto.UploadResponseDto;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 public interface CloudinaryService {
+
+    SignatureResponse getSignatureUpload();
+
     UploadResponseDto uploadImage(MultipartFile file);
 
     List<UploadResponseDto> uploadImages(List<MultipartFile> files);

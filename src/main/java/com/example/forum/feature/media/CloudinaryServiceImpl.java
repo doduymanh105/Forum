@@ -5,6 +5,7 @@ import com.cloudinary.utils.ObjectUtils;
 import com.example.forum.common.constant.AppConstants;
 import com.example.forum.core.exception.AppException;
 import com.example.forum.core.exception.ErrorCode;
+import com.example.forum.feature.media.dto.SignatureResponse;
 import com.example.forum.feature.media.dto.UploadResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -31,6 +33,24 @@ public class CloudinaryServiceImpl implements CloudinaryService {
 
     @Value("${app.upload.max-batch-size}")
     private long maxBatchSize;
+
+    @Override
+    public SignatureResponse getSignatureUpload() {
+        long timestamp = System.currentTimeMillis();
+
+        Map<String, Object> param = new HashMap<>();
+        param.put("timestamp", timestamp);
+        param.put("folder", "forum_temp");
+
+        String signature = cloudinary.apiSignRequest(param, cloudinary.config.apiKey);
+
+        return SignatureResponse.builder()
+                .signature(signature)
+                .timestamp(timestamp)
+                .apiKey(cloudinary.config.apiKey)
+                .cloudName(cloudinary.config.cloudName)
+                .build();
+    }
 
     @Override
     public UploadResponseDto uploadImage(MultipartFile file) {
