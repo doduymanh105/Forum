@@ -36,13 +36,13 @@ public class CloudinaryServiceImpl implements CloudinaryService {
 
     @Override
     public SignatureResponse getSignatureUpload() {
-        long timestamp = System.currentTimeMillis();
+        long timestamp = System.currentTimeMillis()/ 1000L;
 
         Map<String, Object> param = new HashMap<>();
         param.put("timestamp", timestamp);
         param.put("folder", "forum_temp");
 
-        String signature = cloudinary.apiSignRequest(param, cloudinary.config.apiKey);
+        String signature = cloudinary.apiSignRequest(param, cloudinary.config.apiSecret);
 
         return SignatureResponse.builder()
                 .signature(signature)

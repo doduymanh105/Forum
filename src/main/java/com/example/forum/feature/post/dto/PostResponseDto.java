@@ -1,5 +1,6 @@
 package com.example.forum.feature.post.dto;
 
+import com.example.forum.domain.Enum.PostStatus;
 import com.example.forum.domain.MediaEntity;
 import com.example.forum.feature.tag.dto.TagDto;
 import lombok.AllArgsConstructor;
@@ -26,17 +27,17 @@ public class PostResponseDto {
     private Long countedViews;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private PostStatus postStatus;
 
 //    private UserSummaryDto creator;
     private Long creatorId;
     private String creatorName;
     private String creatorAvatarUrl;
 
-//    private Set<CategoryDto> categories;
     private Set<TagDto> tags;
 
-    private Long commentCount; // (Số bình luận)
-    private Integer timeRead;   // (Thời gian đọc, giả sử là Integer)
-    private String isVoted;     // ('UPVOTE', 'DOWNVOTE', hoặc null)
-    private Boolean isSaved;    // (true/false)
+    private Long commentCount;
+    private Integer timeRead;
+    private String isVoted;
+    private Boolean isSaved;
 }

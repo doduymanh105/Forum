@@ -8,6 +8,7 @@ public interface NotificationProjection {
     Long getEventId();
     String getEventName();
     String getEventType();
+    String getDescription();
     String getTargetUrl();
     LocalDateTime getDateNotice();
     Long getCreatedById();

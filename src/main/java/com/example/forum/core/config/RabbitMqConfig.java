@@ -42,6 +42,11 @@ public class RabbitMqConfig {
     public static final String PRIVATE_NOTIFICATION_QUEUE = "interaction.notification.queue";
     public static final String PRIVATE_NOTI_ROUTING_KEY = "interaction.notification.key";
 
+    public static final String POST_EXCHANGE = "forum.post.exchange";
+    public static final String POST_UPLOAD_QUEUE = "forum.post.upload.queue";
+    public static final String POST_UPLOAD_ROUTING_KEY ="post.upload.key";
+
+
     @Bean
     public DirectExchange deadLetterExchange() {
         return new DirectExchange(DEAD_LETTER_EXCHANGE);
@@ -51,6 +56,22 @@ public class RabbitMqConfig {
     public DirectExchange interactionExchange(){
         return new DirectExchange(INTERACTION_EXCHANGE);
     }
+
+    @Bean
+    public DirectExchange postExchange(){ return new DirectExchange(POST_EXCHANGE);}
+
+    @Bean
+    public Queue postQueue(){
+        return QueueBuilder.durable(POST_UPLOAD_QUEUE).build();
+    }
+
+    @Bean
+    public Binding bindingPostUploadQueue(){
+        return BindingBuilder.bind(postQueue())
+                .to(postExchange())
+                .with(POST_UPLOAD_ROUTING_KEY);
+    }
+
 
     @Bean
     public Queue voteQueue(){

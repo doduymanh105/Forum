@@ -1,6 +1,7 @@
 package com.example.forum.feature.post;
 
 import com.example.forum.common.dto.CursorResponse;
+import com.example.forum.domain.Enum.PostStatus;
 import com.example.forum.domain.UserEntity;
 import com.example.forum.feature.post.dto.*;
 import com.example.forum.common.dto.PagedResponse;
@@ -13,6 +14,8 @@ import java.util.List;
 public interface PostService {
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     PostResponseDto createPost(CreatePostRequest request);
+
+    PostStatus getPostStatus(Long postId);
 
 //    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     PostResponseDto getPost(Long postId);

@@ -23,6 +23,7 @@ public interface NotificationRepository extends JpaRepository<Notification,Long>
                 e.event_id AS eventId,
                 e.event_name AS eventName,
                 e.event_type AS eventType,
+                e.description AS description,
                 e.target_url as targetUrl,
                 e.date_notice AS dateNotice,
 

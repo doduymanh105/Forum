@@ -62,7 +62,7 @@ public class VoteBatchWorker {
         Map<Long, Long> downvoteDeltas = new HashMap<>();
         List<Vote> voteToSave = new ArrayList<>();
         List<Vote> voteToDelete = new ArrayList<>();
-        Map<Long, NotificationEvent> notificationEventMap = new HashMap<>();
+//        Map<Long, NotificationEvent> notificationEventMap = new HashMap<>();
         List<PendingNotification> pendingNotifications = new ArrayList<>();
         
         for(VoteMessage msg : distinctVotes.values()){

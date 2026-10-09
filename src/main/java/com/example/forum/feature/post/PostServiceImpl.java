@@ -5,9 +5,10 @@ import com.example.forum.common.dto.CursorResponse;
 import com.example.forum.common.dto.PagedResponse;
 import com.example.forum.common.service.cache.CacheService;
 import com.example.forum.common.utils.TimeUtils;
+import com.example.forum.core.config.RabbitMqConfig;
 import com.example.forum.core.exception.AppException;
 import com.example.forum.core.exception.ErrorCode;
-import com.example.forum.feature.ai.ContentModerationService;
+import com.example.forum.domain.Enum.PostStatus;
 import com.example.forum.feature.ai.GenerativeAiService;
 import com.example.forum.feature.collection.PostCollectionRepository;
 import com.example.forum.feature.follow.FollowRepository;
@@ -15,7 +16,6 @@ import com.example.forum.feature.media.CloudinaryService;
 import com.example.forum.feature.media.dto.UploadResponseDto;
 import com.example.forum.feature.post.dto.*;
 import com.example.forum.domain.*;
-import com.example.forum.domain.Enum.EventType;
 import com.example.forum.domain.Enum.MediaType;
 import com.example.forum.feature.tag.TagRepository;
 import com.example.forum.feature.tag.dto.TagDto;
@@ -23,11 +23,11 @@ import com.example.forum.feature.user.UserRepository;
 import com.example.forum.feature.vote.VoteRepository;
 import com.example.forum.feature.media.MediaRepository;
 import com.example.forum.common.utils.SecurityUtils;
-import com.example.forum.feature.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -57,12 +57,11 @@ public class PostServiceImpl implements PostService {
     private final PostCollectionRepository postCollectionRepository;
 
     private final SecurityUtils securityService;
-    private final NotificationService notificationService;
     private final CloudinaryService cloudinaryService;
     private final GenerativeAiService generativeAiService;
-    private final ContentModerationService moderationService;
     private final CacheService cacheService;
     private final RedissonClient redissonClient;
+    private final RabbitTemplate rabbitTemplate;
 
     @Override
     @Transactional
@@ -70,8 +69,6 @@ public class PostServiceImpl implements PostService {
 
         UserEntity currentUser = securityService.getCurrentUser();  // dùng service
         Long userId = currentUser.getUserId();
-
-        moderationService.validateContentStrictly(request.getPostTitle(), request.getPostContent());
 
         UserEntity creator = userRepo.findById(userId)
                 .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND));
@@ -89,6 +86,7 @@ public class PostServiceImpl implements PostService {
                 .downvotes(0L)
                 .countedViews(0L)
                 .timeRead(calculateTimeRead(request.getPostContent()))
+                .status(PostStatus.PENDING)
                 .isArchived(false)
                 .build();
 
@@ -100,14 +98,17 @@ public class PostServiceImpl implements PostService {
             saveMediaEntity(request.getMediaFiles(), post);
         }
 
-        NotificationEvent newNotificationEvent = notificationService.createEvent(
-                EventType.NEW_POST,
-                creator,
-                request.getPostTitle(),
-                post.getPostId(),
-                "POST");
+        PostModerationMessage message = new PostModerationMessage(post.getPostId());
+        rabbitTemplate.convertAndSend(RabbitMqConfig.POST_EXCHANGE, RabbitMqConfig.POST_UPLOAD_ROUTING_KEY, message);
 
         return mapToPostResponseDto(post, currentUser, true);
+    }
+
+    @Override
+    public PostStatus getPostStatus(Long postId) {
+        PostEntity post = postRepo.findById(postId)
+                .orElseThrow(()-> new AppException(ErrorCode.POST_NOT_FOUND));
+        return post.getStatus();
     }
 
     @Override
@@ -459,7 +460,7 @@ public class PostServiceImpl implements PostService {
             throw new AppException(ErrorCode.POST_NOT_FOUND);
         }
 
-        UserEntity currentUser = securityService.getCurrentUser();  // dùng service
+        UserEntity currentUser = securityService.getCurrentUser();
         Long currentUserId = currentUser.getUserId();
 
         if(!post.getCreator().getUserId().equals(currentUserId)) {
@@ -550,6 +551,7 @@ public class PostServiceImpl implements PostService {
                 .mediaEntityList(mediaEntityList != null ? mediaEntityList : new ArrayList<>())
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
+                .postStatus(post.getStatus())
                 .creatorName(post.getCreator().displayUsername())
                 .creatorId(post.getCreator().getUserId())
                 .creatorAvatarUrl(post.getCreator().getAvatarUrl())

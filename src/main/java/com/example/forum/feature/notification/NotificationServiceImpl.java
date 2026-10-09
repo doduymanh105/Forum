@@ -42,11 +42,11 @@ public class NotificationServiceImpl implements NotificationService {
     private final RabbitTemplate rabbitTemplate;
 
 
-    private List<EventType> privateEventType = List.of(
-            EventType.NEW_COMMENT,
-            EventType.NEW_VOTE,
-            EventType.NEW_COMMENT_VOTE
-    );
+//    private List<EventType> privateEventType = List.of(
+//            EventType.NEW_COMMENT,
+//            EventType.NEW_VOTE,
+//            EventType.NEW_COMMENT_VOTE
+//    );
 
     @Override
     @Transactional
@@ -60,6 +60,8 @@ public class NotificationServiceImpl implements NotificationService {
             case NEW_VOTE -> "New vote by " + creatorName;
             case NEW_FOLLOWER -> creatorName +" have followed you";
             case NEW_COMMENT_VOTE -> creatorName + " have voted your comment";
+            case POST_REJECTED -> "Post rejected";
+            case POST_PUBLISHED -> "Post published";
         };
 
         String targetUrl = createTargetUrl(eventType, referenceId, creator.getUserId());
@@ -226,6 +228,7 @@ public class NotificationServiceImpl implements NotificationService {
                         .eventId(p.getEventId())
                         .eventName(p.getEventName())
                         .eventType(p.getEventType())
+                        .description(p.getDescription())
                         .dateNotice(p.getDateNotice())
                         .createdById(p.getCreatedById())
                         .targetUrl(p.getTargetUrl())
@@ -244,6 +247,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .eventId(e.getEventId())
                 .eventName(e.getEventName())
                 .eventType(e.getEventType().toString())
+                .description(e.getDescription())
                 .dateNotice(e.getDateNotice())
                 .createdById(creator.getUserId())
                 .targetUrl(e.getTargetUrl())
@@ -256,6 +260,8 @@ public class NotificationServiceImpl implements NotificationService {
         String targetUrl="";
         switch (eventType) {
             case NEW_POST:
+            case POST_PUBLISHED:
+            case POST_REJECTED:
             case NEW_VOTE:
                 targetUrl = "/posts/" + referenceId;
                 break;

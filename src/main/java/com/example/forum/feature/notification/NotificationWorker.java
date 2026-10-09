@@ -26,6 +26,7 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class NotificationWorker {
+    // hiện tượng trùng queue:)
 
     private final FollowRepository followRepository;
     private final NotificationRepository notificationRepository;
@@ -72,7 +73,7 @@ public class NotificationWorker {
     }
 
     @Transactional
-    @RabbitListener(queues = RabbitMqConfig.NOTIFICATION_QUEUE)
+    @RabbitListener(queues = RabbitMqConfig.PRIVATE_NOTIFICATION_QUEUE)
     public void notifySpecificUserWorker(PrivateNotificationMessage msg){
 
         log.info("[WORKER] Processing private notification for User: {}", msg.receiverId());
@@ -93,6 +94,7 @@ public class NotificationWorker {
 
         NotificationDto dto = mapSingleToDto(savedNotification);
         websocketNotificationService.sendPrivateNotification(receiver.getUserId(), dto);
+        log.info("[WORKER] SUCCESSFULLY Processing private notification for User: {}", msg.receiverId());
     }
 
 
@@ -106,6 +108,7 @@ public class NotificationWorker {
                 .eventId(e.getEventId())
                 .eventName(e.getEventName())
                 .eventType(e.getEventType().toString())
+                .description(e.getDescription())
                 .dateNotice(e.getDateNotice())
                 .createdById(creator.getUserId())
                 .targetUrl(e.getTargetUrl())

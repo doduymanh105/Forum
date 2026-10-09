@@ -4,6 +4,7 @@ import com.example.forum.common.dto.CursorResponse;
 import com.example.forum.common.dto.PagedResponse;
 import com.example.forum.common.utils.SecurityUtils;
 import com.example.forum.core.annotation.RateLimit;
+import com.example.forum.domain.Enum.PostStatus;
 import com.example.forum.feature.post.dto.*;
 import com.example.forum.common.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.concurrent.ThreadPoolExecutor;
 
 
 @Tag(name = "Post API")
@@ -212,6 +214,17 @@ public class PostController {
                 ApiResponse.success(
                         "Recommended tags"
                 , postService.recommendTagsForContent(request))
+        );
+    }
+
+    @GetMapping("/{id}/status")
+    public ResponseEntity<ApiResponse<PostStatus>> getPostStatus(
+            @PathVariable(value = "id") Long id
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "Post status get"
+                , postService.getPostStatus(id))
         );
     }
 }
