@@ -37,7 +37,8 @@ src/main/java/com/example/forum/
 
 ---
 
-<img width="1052" height="522" alt="Forum-high-architecture drawio" src="https://github.com/user-attachments/assets/6b21248b-1351-44f8-983f-8b37cb3364c1" />
+<img width="4288" height="2168" alt="image" src="https://github.com/user-attachments/assets/1ba6d94a-11ff-482a-bf3f-8ecaca79d0d0" />
+
 
 ## 🔌 API Endpoints Reference
 
