@@ -1,5 +1,6 @@
 package com.example.forum.feature.follow;
 
+import com.example.forum.common.service.cache.CacheService;
 import com.example.forum.core.config.RabbitMqConfig;
 import com.example.forum.domain.Enum.EventType;
 import com.example.forum.domain.Follow;
@@ -9,7 +10,6 @@ import com.example.forum.domain.UserEntity;
 import com.example.forum.feature.follow.dto.FollowMessage;
 import com.example.forum.feature.follow.dto.PendingNotification;
 import com.example.forum.feature.notification.NotificationService;
-import com.example.forum.feature.vote.VoteMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -29,9 +29,10 @@ public class FollowWorker {
 
     private final FollowRepository followRepository;
     private final NotificationService notificationService;
+    private final CacheService cacheService;
 
     @Transactional
-    @RabbitListener(queues = RabbitMqConfig.FOLLOW_QUEUE, containerFactory = "batchContainerFactory") // Bắt buộc để nhận Message theo Lô
+    @RabbitListener(queues = RabbitMqConfig.FOLLOW_QUEUE, containerFactory = "batchContainerFactory")
     public void handleFollowBatch(List<FollowMessage> messages) {
         log.info("[WORKER] Start processing follow batch with {}", messages.size());
 
@@ -62,6 +63,8 @@ public class FollowWorker {
 
         List<Follow> followToSave = new ArrayList<>();
         List<Follow> followToDelete = new ArrayList<>();
+        Map<Long, Long> followerDelta = new HashMap<>();
+        Map<Long, Long> followingDelta = new HashMap<>();
 
         List<PendingNotification> pendingNotifications = new ArrayList<>();
 
@@ -86,14 +89,31 @@ public class FollowWorker {
                         msg.followingId(),
                         "USER");
                 pendingNotifications.add(new PendingNotification(msg.followingId(), newNotificationEvent));
-
+                followerDelta.merge(msg.followingId(), 1L, Long::sum);
+                followingDelta.merge(msg.followerId(), 1L, Long::sum);
             } else if (msg.action().equalsIgnoreCase("UNFOLLOW") && existingFollow != null) {
                 followToDelete.add(existingFollow);
+                followerDelta.merge(msg.followingId(), -1L, Long::sum);
+                followingDelta.merge(msg.followerId(), -1L, Long::sum);
+
             }
         }
 
         if (!followToSave.isEmpty()) followRepository.saveAll(followToSave);
         if (!followToDelete.isEmpty()) followRepository.deleteAll(followToDelete);
+
+        for (Map.Entry<Long, Long> entry : followerDelta.entrySet()) {
+            String redisKey = "user:" + entry.getKey() + ":followers";
+            if (cacheService.get(redisKey) != null) {
+                cacheService.increment(redisKey, entry.getValue());
+            }
+        }
+        for (Map.Entry<Long, Long> entry : followingDelta.entrySet()) {
+            String redisKey = "user:" + entry.getKey() + ":following";
+            if (cacheService.get(redisKey) != null) {
+                cacheService.increment(redisKey, entry.getValue());
+            }
+        }
 
         for(PendingNotification pNoti : pendingNotifications){
             notificationService.notifySpecificUser(UserEntity.builder().userId(pNoti.targetUserId()).build(), pNoti.notificationEvent());
